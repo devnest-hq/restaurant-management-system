@@ -47,3 +47,13 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+exports.getKitchenOrders = async (req, res) => {
+  try {
+    const orders = await orderService.getKitchenOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch kitchen orders" });
+  }
+};
