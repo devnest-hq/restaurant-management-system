@@ -8,8 +8,6 @@ const verifyJWT = (req, res, next) => {
   }
 
   const [scheme, token] = authHeader.split(" ");
-  console.log(scheme);
-  console.log(token);
 
   if (scheme !== "Bearer" || !token) {
     return res.status(401).json({ error: "No access token provided" });
@@ -20,7 +18,6 @@ const verifyJWT = (req, res, next) => {
       token,
       process.env.ACCESS_TOKEN_SECRET
     );
-
     req.user = decoded;
     next();
   } catch (err) {

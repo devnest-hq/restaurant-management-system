@@ -121,8 +121,9 @@ exports.refresh = async (refreshToken) => {
     throw error;
   }
 
+  const user = await prisma.user.findUnique({ where: { id: decoded.userId}});
   const accessToken = jwt.sign(
-    { userId: decoded.userId, role: decoded.role },
+    { userId: user.id, role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: '1h' }
   );
