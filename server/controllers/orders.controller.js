@@ -2,7 +2,9 @@ const orderService = require("../services/orders.service");
 
 exports.createOrder = async (req, res) => {
   try {
-    const order = await orderService.createOrder(req.body);
+    const  items  = req.body.items;
+    const  customerId  = req.user.userId;
+    const order = await orderService.createOrder({ customerId, items });
 
     const io = req.app.get("io");
     if (io) io.emit("new-order", order);
