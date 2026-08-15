@@ -46,6 +46,13 @@ exports.getAllOrders = () =>
     orderBy: { createdAt: "desc" },
   });
 
+  exports.getOrdersByCustomer = (customerId) =>
+  prisma.order.findMany({
+    where: { customerId },
+    include: { items: { include: { menuItem: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
 exports.updateOrderStatus = (id, status) => {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error(`Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`);

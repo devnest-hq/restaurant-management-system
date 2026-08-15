@@ -16,23 +16,31 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = req.user.role === "CUSTOMER"
+      ? await orderService.getOrdersByCustomer(req.user.userId)
+      : await orderService.getAllOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+};
+
 exports.getOrderById = async (req, res) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
+
+    if (req.user.role === "CUSTOMER" && order.customerId !== req.user.userId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
     res.json(order);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch order" });
-  }
-};
-
-exports.getAllOrders = async (req, res) => {
-  try {
-    res.json(await orderService.getAllOrders());
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch orders" });
   }
 };
 
