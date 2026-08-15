@@ -2,7 +2,7 @@ const prisma = require("../prisma/client");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
-exports.createOrder = async ({ userId, items }) => {
+exports.createOrder = async ({ customerId, items }) => {
   if (!items || items.length === 0) {
     throw new Error("Order must include at least one item");
   }
@@ -17,12 +17,12 @@ exports.createOrder = async ({ userId, items }) => {
     const menuItem = menuItems.find((m) => m.id === item.menuItemId);
     if (!menuItem) throw new Error(`Menu item ${item.menuItemId} not found`);
     totalPrice += menuItem.price * item.quantity;
-    return { menuItemId: item.menuItemId, quantity: item.quantity };
+    return { menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: menuItem.price };
   });
 
   return prisma.order.create({
     data: {
-      userId,
+      customerId,
       totalPrice,
       status: "PENDING",
       items: { create: orderItemsData },
@@ -36,7 +36,7 @@ exports.getOrderById = (id) =>
     where: { id: parseInt(id) },
     include: {
       items: { include: { menuItem: true } },
-      user: { select: { id: true, name: true, email: true } },
+      customer: { select: { id: true, name: true, email: true } },
     },
   });
 
