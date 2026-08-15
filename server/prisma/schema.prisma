@@ -1,35 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum Role {
-  ADMIN
-  CHEF
-  WAITER
-  CUSTOMER
-}
-
-enum OrderStatus {
-  PENDING
-  PREPARING
-  READY
-  SERVED
-  CANCELLED
-}
-
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  COMPLETED
 }
 
 model User {
@@ -40,9 +14,10 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   role          Role           @default(CUSTOMER)
-  orders        Order[]
-  reservations  Reservation[]
   notifications Notification[]
+  orders        Order[]
+  refreshTokens RefreshToken[]
+  reservations  Reservation[]
 }
 
 model MenuItem {
@@ -64,24 +39,20 @@ model Order {
   totalPrice Decimal     @db.Decimal(10, 2)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-
   customerId Int
-  customer   User @relation(fields: [customerId], references: [id])
-
-  items    OrderItem[]
-  invoices Invoice[]
+  invoices   Invoice[]
+  customer   User        @relation(fields: [customerId], references: [id])
+  items      OrderItem[]
 }
 
 model OrderItem {
-  id        Int     @id @default(autoincrement())
-  quantity  Int
-  unitPrice Decimal @db.Decimal(10, 2)
-
-  orderId Int
-  order   Order @relation(fields: [orderId], references: [id])
-
+  id         Int      @id @default(autoincrement())
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  orderId    Int
   menuItemId Int
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id])
 }
 
 model Table {
@@ -99,8 +70,8 @@ model Reservation {
   status     ReservationStatus @default(CONFIRMED)
   createdAt  DateTime          @default(now())
   customerId Int
-  customer   User              @relation(fields: [customerId], references: [id])
   tableId    Int
+  customer   User              @relation(fields: [customerId], references: [id])
   table      Table             @relation(fields: [tableId], references: [id])
 
   @@unique([tableId, date, timeSlot])
@@ -112,9 +83,8 @@ model Notification {
   type      String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model InventoryItem {
@@ -128,15 +98,43 @@ model InventoryItem {
 }
 
 model Invoice {
-  id            Int     @id @default(autoincrement())
-  foodCost      Decimal @db.Decimal(10, 2)
-  tax           Decimal @db.Decimal(10, 2)
-  discount      Decimal @default(0) @db.Decimal(10, 2)
-  grandTotal    Decimal @db.Decimal(10, 2)
-  serviceCharge Decimal @db.Decimal(10, 2)
+  id            Int      @id @default(autoincrement())
+  foodCost      Decimal  @db.Decimal(10, 2)
+  tax           Decimal  @db.Decimal(10, 2)
+  discount      Decimal  @default(0) @db.Decimal(10, 2)
+  grandTotal    Decimal  @db.Decimal(10, 2)
+  serviceCharge Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id])
+}
 
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
   createdAt DateTime @default(now())
+  expiresAt DateTime
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-  orderId Int
-  order   Order @relation(fields: [orderId], references: [id])
+enum Role {
+  ADMIN
+  CHEF
+  WAITER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
 }
