@@ -1,6 +1,6 @@
 const prisma = require("../prisma/client");
 
-const VALID_STATUSES = ["placed", "preparing", "ready", "served"];
+const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
 exports.createOrder = async ({ userId, items }) => {
   if (!items || items.length === 0) {
@@ -24,7 +24,7 @@ exports.createOrder = async ({ userId, items }) => {
     data: {
       userId,
       totalPrice,
-      status: "placed",
+      status: "PENDING",
       items: { create: orderItemsData },
     },
     include: { items: { include: { menuItem: true } } },
@@ -56,3 +56,10 @@ exports.updateOrderStatus = (id, status) => {
     include: { items: { include: { menuItem: true } } },
   });
 };
+
+exports.getKitchenOrders = () =>
+  prisma.order.findMany({
+    where: { status: { in: ["PENDING", "PREPARING"] } },
+    include: { items: { include: { menuItem: true } } },
+    orderBy: { createdAt: "asc" },
+  });
