@@ -12,6 +12,17 @@ exports.register = async (req, res) => {
   }
 }
 
+exports.registerStaff = async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+    const user = await authServices.registerStaff(name, email, role);
+    res.status(201).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
