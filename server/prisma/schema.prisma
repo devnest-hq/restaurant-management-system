@@ -7,30 +7,33 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  role          Role           @default(CUSTOMER)
-  notifications Notification[]
-  orders        Order[]
-  refreshTokens RefreshToken[]
-  reservations  Reservation[]
+  id                 Int            @id @default(autoincrement())
+  name               String
+  email              String         @unique
+  password           String
+  mustChangePassword Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  role               Role           @default(CUSTOMER)
+  notifications      Notification[]
+  orders             Order[]
+  refreshTokens      RefreshToken[]
+  reservations       Reservation[]
 }
 
 model MenuItem {
-  id          Int         @id @default(autoincrement())
-  name        String
-  category    String
-  description String?
-  price       Decimal     @db.Decimal(10, 2)
-  available   Boolean     @default(true)
-  imageUrl    String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  orderItems  OrderItem[]
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  category            String
+  description         String?
+  price               Decimal              @db.Decimal(10, 2)
+  available           Boolean              @default(true)
+  imageUrl            String?
+  imagePublicId       String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  orderItems          OrderItem[]
+  menuItemIngredients MenuItemIngredient[]
 }
 
 model Order {
@@ -88,13 +91,14 @@ model Notification {
 }
 
 model InventoryItem {
-  id                Int      @id @default(autoincrement())
-  name              String
-  quantity          Int
-  unit              String
-  lowStockThreshold Int
-  supplier          String?
-  updatedAt         DateTime @updatedAt
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  quantity            Int
+  unit                String
+  lowStockThreshold   Int
+  supplier            String?
+  updatedAt           DateTime             @updatedAt
+  menuItemIngredients MenuItemIngredient[]
 }
 
 model Invoice {
@@ -137,4 +141,13 @@ enum ReservationStatus {
   PENDING
   CONFIRMED
   COMPLETED
+}
+
+model MenuItemIngredient {
+  id              Int           @id @default(autoincrement())
+  quantityUsed    Int
+  menuItemId      Int
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
+  inventoryItemId Int
+  invetoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }

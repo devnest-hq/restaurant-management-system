@@ -1,6 +1,7 @@
 const prisma = require("../prisma/client");
+const cloudinary = require("../config/cloudinary");
 
-exports.createMenuItem = ({ name, category, price, description, imageUrl }) => {
+exports.createMenuItem = ({ name, category, price, description, imageUrl, imagePublicId }) => {
   if (!name || !category || !price) {
     const err = new Error("All fields are required");
     err.status = 400;
@@ -13,23 +14,36 @@ exports.createMenuItem = ({ name, category, price, description, imageUrl }) => {
       category,
       price,
       description,
-      imageUrl
+      imageUrl,
+      imagePublicId
     }
   });
 }
 
-exports.updateMenuItem = async (id, { name, price, available, category, description }) => {
+exports.updateMenuItem = async (id, { name, price, available, category, description, imageUrl, imagePublicId }) => {
+  const existingItem = await prisma.menuItem.findUnique({ where: { id: parseInt(id) } });
+
+  if (!existingItem) {
+    const error = new Error("Menu item not found");
+    error.status = 404;
+    throw error;
+  }
+
+  let updatedItem;
   try {
-    return prisma.menuItem.update({
+    updatedItem = await prisma.menuItem.update({
       where: { id: parseInt(id) },
       data: {
         name,
         price,
         category,
         available,
-        description
+        description,
+        imageUrl,
+        imagePublicId
       }
     });
+    
   } catch (err) {
     if (err.code === 'P2025') {
       const error = new Error("Menu item not found");
@@ -38,7 +52,18 @@ exports.updateMenuItem = async (id, { name, price, available, category, descript
     }
     throw err;
   }
-}
+
+  // Only delete the OLD image, and only after the DB update succeeded
+  if (imagePublicId && existingItem.imagePublicId) {
+    try {
+      await cloudinary.uploader.destroy(existingItem.imagePublicId);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  return updatedItem;
+};
 
 exports.getAllMenuItems = async ({ category, available } = {}) => {
   const where = {};
@@ -62,7 +87,16 @@ exports.getMenuItemById = async (id) => {
   return menuItem;
 }
 
-exports.deleteMenuItem = (id) => {
+exports.deleteMenuItem = async (id) => {
+  const existingItem = await prisma.menuItem.findUnique({ where: { id: parseInt(id) } });
+
+  if (existingItem.imagePublicId) {
+    try {
+      await cloudinary.uploader.destroy(existingItem.imagePublicId);
+    } catch (err) {
+      console.error(err);
+    }
+  }
   try {
     return prisma.menuItem.delete({
       where: { id: parseInt(id) }
