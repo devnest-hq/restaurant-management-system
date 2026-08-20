@@ -34,6 +34,18 @@ model MenuItem {
   updatedAt           DateTime             @updatedAt
   orderItems          OrderItem[]
   menuItemIngredients MenuItemIngredient[]
+<<<<<<< Updated upstream
+=======
+}
+
+model MenuItemIngredient {
+  id              Int           @id @default(autoincrement())
+  quantityUsed    Int
+  menuItemId      Int
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+>>>>>>> Stashed changes
 }
 
 model Order {
