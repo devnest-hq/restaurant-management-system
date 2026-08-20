@@ -36,6 +36,15 @@ model MenuItem {
   menuItemIngredients MenuItemIngredient[]
 }
 
+model MenuItemIngredient {
+  id              Int           @id @default(autoincrement())
+  quantityUsed    Int
+  menuItemId      Int
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
+
 model Order {
   id         Int         @id @default(autoincrement())
   status     OrderStatus @default(PENDING)
@@ -141,13 +150,4 @@ enum ReservationStatus {
   PENDING
   CONFIRMED
   COMPLETED
-}
-
-model MenuItemIngredient {
-  id              Int           @id @default(autoincrement())
-  quantityUsed    Int
-  menuItemId      Int
-  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id])
-  inventoryItemId Int
-  invetoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id])
 }
