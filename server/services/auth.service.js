@@ -32,47 +32,6 @@ exports.register = async (name, email, password) => {
   }
 }
 
-exports.registerStaff = async (name, email, role) => {
-  if (!name || !email || !role) {
-    const err = new Error("Name, email and role are required");
-    err.status = 400;
-    throw err;
-  }
-
-  let password;
-  if (role === "WAITER") {
-    password = process.env.WAITERS_ACCESS_TOKEN_SECRET;
-  } else if (role === "CHEF") {
-    password = process.env.CHEFS_ACCESS_TOKEN_SECRET;
-  } else {
-    const err = new Error("Invalid role");
-    err.status = 400;
-    throw err;
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  try {
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role
-      }
-    });
-    const { password: _, ...safeUser } = user;
-    return safeUser;
-  } catch (err) {
-    if (err.code === "P2002") {
-      const error = new Error("Email already exists");
-      error.status = 409;
-      throw error;
-    }
-    throw err;
-  }
-};
-
 exports.login = async (email, password) => {
   const user = await prisma.user.findUnique({ where: { email }});
 

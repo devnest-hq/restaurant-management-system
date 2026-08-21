@@ -12,7 +12,7 @@ exports.createInventoryItem = async (req, res) => {
 exports.getAllInventoryItems = async (req, res) => {
   try {
     const inventoryItems = await inventoryService.getAllInventoryItems();
-    res.json(inventoryItems);
+    res.status(200).json(inventoryItems);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,7 +24,7 @@ exports.getInventoryItemById = async (req, res) => {
     if (!inventoryItem) {
       return res.status(404).json({ error: "Inventory item not found" });
     }
-    res.json(inventoryItem);
+    res.status(200).json(inventoryItem);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -33,7 +33,7 @@ exports.getInventoryItemById = async (req, res) => {
 exports.getLowStockItems = async (req, res) => {
   try {
     const lowStockItems = await inventoryService.getLowStockItems();
-    res.json(lowStockItems);
+    res.status(200).json(lowStockItems);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
