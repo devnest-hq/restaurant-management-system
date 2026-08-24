@@ -1,6 +1,4 @@
 import logging
-import uuid
-from django.conf import settings
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.views import APIView
@@ -10,6 +8,8 @@ from .models import Payment
 from .serializers import CreatePaymentSerializer, PaymentResponseSerializer
 from .authentication import PaymentServiceAuthentication
 from .utils import log_payment_event
+from .services.stripe_service import StripeService
+from .services.razorpay_service import RazorpayService
 
 logger = logging.getLogger('payments')
 
@@ -60,6 +60,55 @@ class CreatePaymentView(APIView):
                 status=Payment.PaymentStatus.PENDING,
             )
 
+            # Create payment session based on method
+            session_data = None
+
+            if method == Payment.PaymentMethod.STRIPE:
+                try:
+                    stripe_service = StripeService()
+                    session_data = stripe_service.create_payment_session(payment)
+                except Exception as stripe_error:
+                    payment.status = Payment.PaymentStatus.FAILED
+                    payment.error_message = str(stripe_error)
+                    payment.save()
+                    return Response(
+                        {
+                            'success': False,
+                            'error': {
+                                'code': 502,
+                                'message': 'Failed to create Stripe payment session.',
+                            }
+                        },
+                        status=status.HTTP_502_BAD_GATEWAY
+                    )
+
+            elif method == Payment.PaymentMethod.RAZORPAY:
+                try:
+                    razorpay_service = RazorpayService()
+                    session_data = razorpay_service.create_payment_session(payment)
+                except Exception as razorpay_error:
+                    payment.status = Payment.PaymentStatus.FAILED
+                    payment.error_message = str(razorpay_error)
+                    payment.save()
+                    return Response(
+                        {
+                            'success': False,
+                            'error': {
+                                'code': 502,
+                                'message': 'Failed to create Razorpay payment session.',
+                            }
+                        },
+                        status=status.HTTP_502_BAD_GATEWAY
+                    )
+
+            # Update payment with session data
+            if session_data:
+                payment.gateway_session_id = session_data['session_id']
+                payment.client_secret = session_data['client_secret']
+                payment.payment_link = session_data['payment_link']
+                payment.status = Payment.PaymentStatus.PROCESSING
+                payment.save()
+
             log_payment_event(
                 payment,
                 'PAYMENT_CREATED',
@@ -67,20 +116,20 @@ class CreatePaymentView(APIView):
                     'order_id': order_id,
                     'amount': str(validated_data['amount']),
                     'method': method,
+                    'status': payment.status,
                 }
             )
 
             return Response(
                 {
                     'success': True,
-                    'message': 'Payment record created successfully.',
+                    'message': 'Payment session created successfully.',
                     'payment': PaymentResponseSerializer(payment).data,
                 },
                 status=status.HTTP_201_CREATED
             )
 
         except IntegrityError:
-            # Handle race condition where duplicate arrives simultaneously
             existing_payment = Payment.objects.filter(
                 idempotency_key=validated_data['idempotency_key']
             ).first()
