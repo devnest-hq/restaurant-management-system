@@ -38,3 +38,21 @@ class PaymentResponseSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]    
+
+class PaymentStatusSerializer(serializers.ModelSerializer):
+    """Returns only essential payment status information."""
+    class Meta:
+        model = Payment
+        fields = [
+            'order_id',
+            'amount',
+            'currency',
+            'method',
+            'status',
+            'gateway_payment_id',
+            'refund_id',
+            'refund_amount',
+            'error_message',
+            'created_at',
+            'updated_at',
+        ]        
