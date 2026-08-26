@@ -20,6 +20,63 @@ exports.createInventoryItem = async ({ name, quantity, unit, lowStockThreshold, 
   return prisma.inventoryItem.create({ data: { name, quantity, unit, lowStockThreshold, supplier } });
 };
 
+// Bulk create inventory items
+exports.createInventoryItems = async (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("Items must be a non-empty array");
+  }
+
+  for (const item of items) {
+    const {
+      name,
+      quantity,
+      unit,
+      lowStockThreshold,
+      supplier,
+    } = item;
+
+    if (!name || !unit) {
+      throw new Error("Name and unit are required for every item");
+    }
+
+    if (
+      typeof name !== "string" ||
+      typeof unit !== "string"
+    ) {
+      throw new Error(
+        "Name and unit must be strings"
+      );
+    }
+
+    if (
+      typeof quantity !== "number" ||
+      typeof lowStockThreshold !== "number"
+    ) {
+      throw new Error(
+        "Quantity and low stock threshold must be numbers"
+      );
+    }
+
+    if (quantity < 0 || lowStockThreshold < 0) {
+      throw new Error(
+        "Quantity and low stock threshold must be non-negative"
+      );
+    }
+
+    if (
+      supplier !== undefined &&
+      supplier !== null &&
+      typeof supplier !== "string"
+    ) {
+      throw new Error("Supplier must be a string");
+    }
+  }
+
+  return prisma.inventoryItem.createMany({
+    data: items,
+  });
+};
+
 exports.getAllInventoryItems = async () => {
   return prisma.inventoryItem.findMany({
     orderBy: { updatedAt: "desc" },

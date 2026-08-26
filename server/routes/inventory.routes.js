@@ -7,6 +7,7 @@ const verifyRole = require("../middleware/verify.role");
 router.use(verify);
 
 router.post("/", verifyRole(["ADMIN"]), inventoryController.createInventoryItem);
+router.post("/bulk", verifyRole(["ADMIN"]), inventoryController.createInventoryItems);
 router.get("/", verifyRole(["CHEF", "ADMIN"]), inventoryController.getAllInventoryItems);
 router.get("/low-stock", verifyRole(["CHEF", "ADMIN"]), inventoryController.getLowStockItems);
 router.get("/:id", verifyRole(["CHEF", "ADMIN"]), inventoryController.getInventoryItemById);
