@@ -53,20 +53,136 @@ exports.getAllOrders = () =>
     orderBy: { createdAt: "desc" },
   });
 
-exports.updateOrderStatus = (id, status) => {
+exports.updateOrderStatus = async (id, status) => {
+  const orderId = parseInt(id);
+
   if (!VALID_STATUSES.includes(status)) {
-    throw new Error(`Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`);
+    throw new Error(
+      `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`
+    );
   }
+
+  if (status === "SERVED") {
+    return exports.completeOrder(orderId);
+  }
+
   return prisma.order.update({
-    where: { id: parseInt(id) },
+    where: { id: orderId },
     data: { status },
-    include: { items: { include: { menuItem: true } } },
+    include: {
+      items: {
+        include: {
+          menuItem: true,
+        },
+      },
+    },
   });
 };
 
-exports.getKitchenOrders = () =>
-  prisma.order.findMany({
+
+exports.completeOrder = async (orderId) => {
+  const id = parseInt(orderId);
+
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Get the order and its ingredients
+    const order = await tx.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            menuItem: {
+              include: {
+                menuItemIngredients: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    // 2. Prevent duplicate completion
+    if (order.status === "SERVED") {
+      throw new Error("Order has already been completed");
+    }
+
+    if (order.status === "CANCELLED") {
+      throw new Error("Cancelled orders cannot be completed");
+    }
+
+    if (order.status !== "READY") {
+      throw new Error("Only ready orders can be completed");
+    }
+
+    // 3. Calculate inventory usage
+    const inventoryUsage = new Map();
+
+    for (const orderItem of order.items) {
+      for (const ingredient of orderItem.menuItem.menuItemIngredients) {
+        const amountUsed =
+          ingredient.quantityUsed * orderItem.quantity;
+
+        const currentUsage =
+          inventoryUsage.get(ingredient.inventoryItemId) || 0;
+
+        inventoryUsage.set(
+          ingredient.inventoryItemId,
+          currentUsage + amountUsed
+        );
+      }
+    }
+
+    // 4. Atomically deduct inventory
+    for (const [inventoryId, amountUsed] of inventoryUsage) {
+      const updated = await tx.inventoryItem.updateMany({
+        where: {
+          id: inventoryId,
+          quantity: {
+            gte: amountUsed,
+          },
+        },
+        data: {
+          quantity: {
+            decrement: amountUsed,
+          },
+        },
+      });
+
+      if (updated.count === 0) {
+        throw new Error(
+          `Insufficient inventory for inventory item ${inventoryId}`
+        );
+      }
+    }
+
+    // 5. Mark order as SERVED
+    const completedOrder = await tx.order.update({
+      where: { id },
+      data: {
+        status: "SERVED",
+      },
+      include: {
+        items: {
+          include: {
+            menuItem: true,
+          },
+        },
+      },
+    });
+
+    return completedOrder;
+  });
+
+  return result;
+};
+
+exports.getKitchenOrders = () => {
+  return prisma.order.findMany({
     where: { status: { in: ["PENDING", "PREPARING"] } },
     include: { items: { include: { menuItem: true } } },
     orderBy: { createdAt: "asc" },
   });
+};

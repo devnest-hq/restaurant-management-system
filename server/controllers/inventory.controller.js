@@ -9,6 +9,28 @@ exports.createInventoryItem = async (req, res) => {
   }
 };
 
+// Bulk create inventory items
+exports.createInventoryItems = async (req, res) => {
+  try {
+    const { items } = req.body;
+
+    const result = await inventoryService.createInventoryItems(items);
+
+    return res.status(201).json({
+      success: true,
+      message: `${result.count} inventory items created successfully`,
+      data: result,
+    });
+  } catch (err) {
+    console.error("Bulk inventory creation error:", err);
+
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.status ? err.message : "Internal server error",
+    });
+  }
+};
+
 exports.getAllInventoryItems = async (req, res) => {
   try {
     const inventoryItems = await inventoryService.getAllInventoryItems();
