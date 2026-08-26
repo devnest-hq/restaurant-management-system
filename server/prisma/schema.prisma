@@ -76,7 +76,7 @@ model Table {
 
 model Reservation {
   id         Int               @id @default(autoincrement())
-  date       DateTime
+  date       DateTime          @db.Date
   timeSlot   String
   guestCount Int
   status     ReservationStatus @default(CONFIRMED)
