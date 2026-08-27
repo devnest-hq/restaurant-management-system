@@ -3,8 +3,10 @@ const router = express.Router();
 const ordersController = require("../controllers/orders.controller");
 const verify = require("../middleware/verify.JWT");
 const verifyRole = require("../middleware/verify.role");
+const requirePasswordChange = require("../middleware/verify.password.change");
 
 router.use(verify);
+router.use(requirePasswordChange);
 
 router.post("/", verifyRole(["CUSTOMER", "WAITER", "ADMIN"]), ordersController.createOrder);
 router.get("/", verifyRole(["CUSTOMER", "WAITER", "CHEF", "ADMIN"]), ordersController.getAllOrders);
