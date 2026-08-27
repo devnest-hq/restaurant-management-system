@@ -7,8 +7,8 @@ const verifyRole = require("../middleware/verify.role");
 router.use(verify);
 router.use(verifyRole(["ADMIN"]));
 
-router.post("/table", reservationsController.createTable);
-router.patch("/table/:id", reservationsController.updateTableCapacity);
-router.delete("/table/:id", reservationsController.deleteTable);
+router.post("/", tablesController.createTable);
+router.patch("/:id", tablesController.updateTableCapacity);
+router.delete("/:id", tablesController.deleteTable);
 
 module.exports = router;
