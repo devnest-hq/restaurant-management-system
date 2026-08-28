@@ -3,8 +3,10 @@ const router = express.Router();
 const inventoryController = require("../controllers/inventory.controller");
 const verify = require("../middleware/verify.JWT");
 const verifyRole = require("../middleware/verify.role");
+const requirePasswordChange = require("../middleware/verify.password.change");
 
 router.use(verify);
+router.use(requirePasswordChange);
 
 router.post("/", verifyRole(["ADMIN"]), inventoryController.createInventoryItem);
 router.post("/bulk", verifyRole(["ADMIN"]), inventoryController.createInventoryItems);

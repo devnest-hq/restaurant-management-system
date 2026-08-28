@@ -28,7 +28,7 @@ exports.updateMenuItem = async (req, res) => {
 
 exports.getAllMenuItems = async (req, res) => {
   try {
-    const menuItems = await menuServices.getAllMenuItems(req.params);
+    const menuItems = await menuServices.getAllMenuItems(req.query);
     res.status(200).json(menuItems);
   } catch (err) {
     console.log(err);

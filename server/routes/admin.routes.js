@@ -3,9 +3,11 @@ const router = express.Router();
 const adminController = require("../controllers/admin.controller");
 const verify = require("../middleware/verify.JWT");
 const verifyRole = require("../middleware/verify.role");
+const requirePasswordChange = require("../middleware/verify.password.change");
 
 router.use(verify);
 router.use(verifyRole(["ADMIN"]));
+router.use(requirePasswordChange);
 
 router.post("/create-staff", adminController.createStaff);
 router.get("/staff", adminController.getAllStaff);

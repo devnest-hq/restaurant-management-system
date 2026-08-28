@@ -155,7 +155,7 @@ exports.salesReport = async (period = "daily") => {
     result = await prisma.$queryRaw`
       SELECT
         DATE_TRUNC('day', "Order"."createdAt") AS period,
-        SUM("Order"."totalAmount") AS total_sales
+        SUM("Order"."totalPrice") AS total_sales
       FROM "Order"
       WHERE "Order"."status" = 'SERVED'
       GROUP BY DATE_TRUNC('day', "Order"."createdAt")
@@ -167,7 +167,7 @@ exports.salesReport = async (period = "daily") => {
     result = await prisma.$queryRaw`
       SELECT
         DATE_TRUNC('week', "Order"."createdAt") AS period,
-        SUM("Order"."totalAmount") AS total_sales
+        SUM("Order"."totalPrice") AS total_sales
       FROM "Order"
       WHERE "Order"."status" = 'SERVED'
       GROUP BY DATE_TRUNC('week', "Order"."createdAt")
@@ -179,7 +179,7 @@ exports.salesReport = async (period = "daily") => {
     result = await prisma.$queryRaw`
       SELECT
         DATE_TRUNC('month', "Order"."createdAt") AS period,
-        SUM("Order"."totalAmount") AS total_sales
+        SUM("Order"."totalPrice") AS total_sales
       FROM "Order"
       WHERE "Order"."status" = 'SERVED'
       GROUP BY DATE_TRUNC('month', "Order"."createdAt")
@@ -191,7 +191,6 @@ exports.salesReport = async (period = "daily") => {
 };
 
 // Aggregation data from orders, menu, and inventory for admin dashboard
-
 exports.dashboardData = async () => {
   const [
     totalOrders,
@@ -224,7 +223,7 @@ exports.dashboardData = async () => {
         status: "SERVED",
       },
       _sum: {
-        totalAmount: true,
+        totalPrice: true,
       },
     }),
 
@@ -239,7 +238,7 @@ exports.dashboardData = async () => {
     totalOrders,
     completedOrders,
     cancelledOrders,
-    totalRevenue: totalRevenue._sum.totalAmount || 0,
+    totalRevenue: totalRevenue._sum.totalPrice || 0,
     totalMenuItems,
     totalInventoryItems,
   };
