@@ -1,4 +1,6 @@
 const orderService = require("../services/orders.service");
+const invoiceService = require("../services/invoice.service");
+
 
 exports.createOrder = async (req, res) => {
   try {
@@ -65,5 +67,15 @@ exports.getKitchenOrders = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch kitchen orders" });
+  }
+};
+
+exports.getInvoice = async (req, res) => {
+  try {
+    const invoice = await invoiceService.getInvoiceByOrderId(req.params.id, req.user);
+    res.status(200).json(invoice);
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ error: err.message });
   }
 };

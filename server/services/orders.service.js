@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const invoiceService = require("./invoice.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
@@ -20,7 +21,7 @@ exports.createOrder = async ({ customerId, items }) => {
     return { menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: menuItem.price };
   });
 
-  return prisma.order.create({
+  const order = await prisma.order.create({
     data: {
       customerId,
       totalPrice,
@@ -29,6 +30,10 @@ exports.createOrder = async ({ customerId, items }) => {
     },
     include: { items: { include: { menuItem: true } } },
   });
+
+  await invoiceService.ensureInvoiceExists(order.id);
+
+  return order;
 };
 
 exports.getOrderById = (id) =>
@@ -116,6 +121,8 @@ exports.completeOrder = async (orderId) => {
     if (order.status !== "READY") {
       throw new Error("Only ready orders can be completed");
     }
+
+    await invoiceService.ensureInvoiceExists(id, tx);
 
     // 3. Calculate inventory usage
     const inventoryUsage = new Map();
