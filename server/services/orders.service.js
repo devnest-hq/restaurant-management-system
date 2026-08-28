@@ -8,6 +8,15 @@ exports.createOrder = async ({ customerId, items }) => {
     throw new Error("Order must include at least one item");
   }
 
+  for (const item of items) {
+    if (!Number.isInteger(item.menuItemId) || item.menuItemId <= 0) {
+      throw new Error("Invalid menu item ID");
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      throw new Error("Quantity must be a positive whole number");
+    }
+  }
+
   const menuItemIds = items.map((i) => i.menuItemId);
   const menuItems = await prisma.menuItem.findMany({
     where: { id: { in: menuItemIds } },
@@ -37,26 +46,26 @@ exports.createOrder = async ({ customerId, items }) => {
 };
 
 exports.getOrderById = (id) =>
-  prisma.order.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      items: { include: { menuItem: true } },
-      customer: { select: { id: true, name: true, email: true } },
-    },
-  });
+prisma.order.findUnique({
+  where: { id: parseInt(id) },
+  include: {
+    items: { include: { menuItem: true } },
+    customer: { select: { id: true, name: true, email: true } },
+  },
+});
 
 exports.getAllOrders = () =>
-  prisma.order.findMany({
-    include: { items: { include: { menuItem: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+prisma.order.findMany({
+  include: { items: { include: { menuItem: true } } },
+  orderBy: { createdAt: "desc" },
+});
 
-  exports.getOrdersByCustomer = (customerId) =>
-  prisma.order.findMany({
-    where: { customerId },
-    include: { items: { include: { menuItem: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+exports.getOrdersByCustomer = (customerId) =>
+prisma.order.findMany({
+  where: { customerId },
+  include: { items: { include: { menuItem: true } } },
+  orderBy: { createdAt: "desc" },
+});
 
 exports.updateOrderStatus = async (id, status) => {
   const orderId = parseInt(id);
@@ -69,6 +78,16 @@ exports.updateOrderStatus = async (id, status) => {
 
   if (status === "SERVED") {
     return exports.completeOrder(orderId);
+  }
+
+  const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
+
+  if (!currentOrder) {
+    throw new Error("Order not found");
+  }
+
+  if (currentOrder.status === "SERVED" || currentOrder.status === "CANCELLED") {
+    throw new Error(`Cannot change status of a ${currentOrder.status} order`);
   }
 
   return prisma.order.update({
