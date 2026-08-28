@@ -11,5 +11,6 @@ router.get("/", verifyRole(["CUSTOMER", "WAITER", "CHEF", "ADMIN"]), ordersContr
 router.get("/kitchen", verifyRole(["CHEF", "ADMIN"]), ordersController.getKitchenOrders);
 router.get("/:id", verifyRole(["CUSTOMER", "WAITER", "CHEF", "ADMIN"]), ordersController.getOrderById);
 router.patch("/:id/status", verifyRole(["CHEF", "WAITER", "ADMIN"]), ordersController.updateOrderStatus);
+router.get("/:id/invoice", verifyRole(["CUSTOMER", "WAITER", "ADMIN"]), ordersController.getInvoice);
 
 module.exports = router;
