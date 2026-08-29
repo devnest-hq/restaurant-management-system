@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const { createNotification } = require("./notification.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
@@ -20,7 +21,7 @@ exports.createOrder = async ({ customerId, items }) => {
     return { menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: menuItem.price };
   });
 
-  return prisma.order.create({
+  const order = await prisma.order.create({
     data: {
       customerId,
       totalPrice,
@@ -29,6 +30,19 @@ exports.createOrder = async ({ customerId, items }) => {
     },
     include: { items: { include: { menuItem: true } } },
   });
+
+  await notifyRoles(["ADMIN", "CHEF"], {
+    type: "NEW_ORDER",
+    message: `New Order #${order.id} placed. Total: $${totalPrice.toFixed(2)}`,
+  });
+
+  await createNotification({
+    userId: customerId,
+    type: "ORDER PLACED",
+    message: `Your order ${order.id} has been placed successfully. Total: $${totalPrice.toFixed(2)}`
+  });
+
+  return order;
 };
 
 exports.getOrderById = (id) =>
@@ -66,7 +80,7 @@ exports.updateOrderStatus = async (id, status) => {
     return exports.completeOrder(orderId);
   }
 
-  return prisma.order.update({
+  const order = await prisma.order.update({
     where: { id: orderId },
     data: { status },
     include: {
@@ -77,6 +91,14 @@ exports.updateOrderStatus = async (id, status) => {
       },
     },
   });
+
+  await createNotification({
+    userId: order.customerId,
+    type: "ORDER STATUS UPDATED",
+    message: `Your order ${order.id} status has been updated to ${status}.`
+  });
+
+  return order;
 };
 
 
@@ -174,6 +196,12 @@ exports.completeOrder = async (orderId) => {
     });
 
     return completedOrder;
+  });
+
+  await createNotification({
+    userId: result.customerId,
+    type: "ORDER COMPLETED",
+    message: `Your order ${result.id} has been completed and served. Enjoy your meal!`
   });
 
   return result;
