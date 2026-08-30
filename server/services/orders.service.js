@@ -1,6 +1,6 @@
 const prisma = require("../prisma/client");
 const inventoryService = require("./inventory.service");
-const { createNotification } = require("./notification.service");
+const { createNotification, notifyRoles } = require("./notification.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
