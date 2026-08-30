@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const inventoryService = require("./inventory.service");
 const { createNotification } = require("./notification.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
@@ -178,6 +179,11 @@ exports.completeOrder = async (orderId) => {
           `Insufficient inventory for inventory item ${inventoryId}`
         );
       }
+
+      const inventoryItem = await tx.inventoryItem.findUnique({
+        where: { id: inventoryId }
+      });
+      await inventoryService.checkAndNotifyLowStock(inventoryItem, tx);
     }
 
     // 5. Mark order as SERVED
