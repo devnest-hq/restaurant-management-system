@@ -30,6 +30,7 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/tables", tableRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.send("DevNest Restaurant Management API is running");
