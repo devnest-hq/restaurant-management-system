@@ -33,6 +33,14 @@ exports.createInventoryItem = async ({ name, quantity, unit, lowStockThreshold, 
     throw new Error("Quantity and low stock threshold must be numbers");
   }
 
+  if (
+    supplier !== undefined &&
+    supplier !== null &&
+    typeof supplier !== "string"
+  ) {
+    throw new Error("Supplier must be a string");
+  }
+
   return prisma.inventoryItem.create({ data: { name, quantity, unit, lowStockThreshold, supplier } });
 };
 

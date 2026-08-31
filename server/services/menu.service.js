@@ -88,7 +88,15 @@ exports.getMenuItemById = async (id) => {
 }
 
 exports.deleteMenuItem = async (id) => {
-  const existingItem = await prisma.menuItem.findUnique({ where: { id: parseInt(id) } });
+  const existingItem = await prisma.menuItem.findUnique({
+    where: { id: parseInt(id) }
+  });
+
+  if (!existingItem) {
+    const error = new Error("Menu item not found");
+    error.status = 404;
+    throw error;
+  }
 
   if (existingItem.imagePublicId) {
     try {
@@ -97,17 +105,18 @@ exports.deleteMenuItem = async (id) => {
       console.error(err);
     }
   }
+
   try {
-    return prisma.menuItem.delete({
+    return await prisma.menuItem.delete({
       where: { id: parseInt(id) }
     });
   } catch (err) {
-    if (err.code === 'P2025') {
+    if (err.code === "P2025") {
       const error = new Error("Menu item not found");
       error.status = 404;
       throw error;
     }
+
     throw err;
   }
-
-}
+};
