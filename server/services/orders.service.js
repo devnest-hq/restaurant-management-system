@@ -1,12 +1,20 @@
 const prisma = require("../prisma/client");
-const inventoryService = require("./inventory.service");
-const { createNotification, notifyRoles } = require("./notification.service");
+const invoiceService = require("./invoice.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
 exports.createOrder = async ({ customerId, items }) => {
   if (!items || items.length === 0) {
     throw new Error("Order must include at least one item");
+  }
+
+  for (const item of items) {
+    if (!Number.isInteger(item.menuItemId) || item.menuItemId <= 0) {
+      throw new Error("Invalid menu item ID");
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      throw new Error("Quantity must be a positive whole number");
+    }
   }
 
   const menuItemIds = items.map((i) => i.menuItemId);
@@ -32,41 +40,32 @@ exports.createOrder = async ({ customerId, items }) => {
     include: { items: { include: { menuItem: true } } },
   });
 
-  await notifyRoles(["ADMIN", "CHEF"], {
-    type: "NEW_ORDER",
-    message: `New Order #${order.id} placed. Total: $${totalPrice.toFixed(2)}`,
-  });
-
-  await createNotification({
-    userId: customerId,
-    type: "ORDER PLACED",
-    message: `Your order ${order.id} has been placed successfully. Total: $${totalPrice.toFixed(2)}`
-  });
+  await invoiceService.ensureInvoiceExists(order.id);
 
   return order;
 };
 
 exports.getOrderById = (id) =>
-  prisma.order.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      items: { include: { menuItem: true } },
-      customer: { select: { id: true, name: true, email: true } },
-    },
-  });
+prisma.order.findUnique({
+  where: { id: parseInt(id) },
+  include: {
+    items: { include: { menuItem: true } },
+    customer: { select: { id: true, name: true, email: true } },
+  },
+});
 
 exports.getAllOrders = () =>
-  prisma.order.findMany({
-    include: { items: { include: { menuItem: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+prisma.order.findMany({
+  include: { items: { include: { menuItem: true } } },
+  orderBy: { createdAt: "desc" },
+});
 
-  exports.getOrdersByCustomer = (customerId) =>
-  prisma.order.findMany({
-    where: { customerId },
-    include: { items: { include: { menuItem: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+exports.getOrdersByCustomer = (customerId) =>
+prisma.order.findMany({
+  where: { customerId },
+  include: { items: { include: { menuItem: true } } },
+  orderBy: { createdAt: "desc" },
+});
 
 exports.updateOrderStatus = async (id, status) => {
   const orderId = parseInt(id);
@@ -81,7 +80,17 @@ exports.updateOrderStatus = async (id, status) => {
     return exports.completeOrder(orderId);
   }
 
-  const order = await prisma.order.update({
+  const currentOrder = await prisma.order.findUnique({ where: { id: orderId } });
+
+  if (!currentOrder) {
+    throw new Error("Order not found");
+  }
+
+  if (currentOrder.status === "SERVED" || currentOrder.status === "CANCELLED") {
+    throw new Error(`Cannot change status of a ${currentOrder.status} order`);
+  }
+
+  return prisma.order.update({
     where: { id: orderId },
     data: { status },
     include: {
@@ -139,6 +148,8 @@ exports.completeOrder = async (orderId) => {
     if (order.status !== "READY") {
       throw new Error("Only ready orders can be completed");
     }
+
+    await invoiceService.ensureInvoiceExists(id, tx);
 
     // 3. Calculate inventory usage
     const inventoryUsage = new Map();

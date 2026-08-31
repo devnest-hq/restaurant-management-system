@@ -22,7 +22,7 @@ const verifyJWT = (req, res, next) => {
     next();
   } catch (err) {
     console.error(err);
-    return res.status(403).json({ error: "Invalid or expired access token" });
+    return res.status(401).json({ error: "Invalid or expired access token" });
   }
 }
 

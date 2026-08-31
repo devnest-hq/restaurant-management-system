@@ -138,3 +138,51 @@ exports.logout = async (refreshToken) => {
     });
   }
 }
+
+exports.changePassword = async (userId, oldPassword, newPassword) => {
+  if (!oldPassword || !newPassword) {
+    const err = new Error("Old password and new password are required");
+    err.status = 400;
+    throw err;
+  }
+
+  if (oldPassword === newPassword) {
+    const err = new Error("New password must be different from old password");
+    err.status = 400;
+    throw err;
+  }
+
+  if (newPassword.length < 8) {
+    const err = new Error("New password must be at least 8 characters");
+    err.status = 400;
+    throw err;
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    const err = new Error("User not found");
+    err.status = 404;
+    throw err;
+  }
+
+  const passwordMatches = await bcrypt.compare(oldPassword, user.password);
+
+  if (!passwordMatches) {
+    const err = new Error("Old password is incorrect");
+    err.status = 401;
+    throw err;
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password: hashedPassword,
+      mustChangePassword: false
+    }
+  });
+
+  return { message: "Password changed successfully" };
+}
