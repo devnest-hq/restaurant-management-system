@@ -1,11 +1,12 @@
 const inventoryService = require("../services/inventory.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 exports.createInventoryItem = async (req, res) => {
   try {
     const inventoryItem = await inventoryService.createInventoryItem(req.body);
     res.status(201).json(inventoryItem);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't create inventory item") });
   }
 };
 
@@ -22,11 +23,9 @@ exports.createInventoryItems = async (req, res) => {
       data: result,
     });
   } catch (err) {
-    console.error("Bulk inventory creation error:", err);
-
     return res.status(err.status || 500).json({
       success: false,
-      message: err.status ? err.message : "Internal server error",
+      message: getSafeErrorMessage(err, "Couldn't create inventory items"),
     });
   }
 };
@@ -35,8 +34,8 @@ exports.getAllInventoryItems = async (req, res) => {
   try {
     const inventoryItems = await inventoryService.getAllInventoryItems();
     res.status(200).json(inventoryItems);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch inventory items") });
   }
 };
 
@@ -47,8 +46,8 @@ exports.getInventoryItemById = async (req, res) => {
       return res.status(404).json({ error: "Inventory item not found" });
     }
     res.status(200).json(inventoryItem);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch inventory item") });
   }
 };
 
@@ -56,8 +55,8 @@ exports.getLowStockItems = async (req, res) => {
   try {
     const lowStockItems = await inventoryService.getLowStockItems();
     res.status(200).json(lowStockItems);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch low stock items") });
   }
 };
 
@@ -68,8 +67,8 @@ exports.updateInventoryItem = async (req, res) => {
       return res.status(404).json({ error: "Inventory item not found" });
     }
     res.status(200).json(updatedInventoryItem);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't update inventory item") });
   }
 };
 
@@ -80,7 +79,7 @@ exports.deleteInventoryItem = async (req, res) => {
       return res.status(404).json({ error: "Inventory item not found" });
     }
     res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't delete inventory item") });
   }
 };

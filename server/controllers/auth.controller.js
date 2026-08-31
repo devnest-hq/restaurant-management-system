@@ -1,4 +1,5 @@
 const authServices = require("../services/auth.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 exports.register = async (req, res) => {
   try {
@@ -7,8 +8,7 @@ exports.register = async (req, res) => {
     res.status(201).json(user);
 
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't create your account") });
   }
 }
 
@@ -35,8 +35,7 @@ exports.login = async (req, res) => {
     });
     
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't log you in") });
   }
 }
 
@@ -47,8 +46,7 @@ exports.refresh = async (req, res) => {
     res.status(200).json({ accessToken: accessToken });
 
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't log you out") });
   }
 }
 
@@ -63,10 +61,9 @@ exports.logout = async (req, res) => {
     });
     res.status(200).json({ message: "Logged out successfully" })
     
-  } catch (err) {
-    console.log(err.message);
-    res.status(err.status || 500).json({ error: err.message })
-  }
+    } catch (err) {
+      res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't log you out") });
+    }
 }
 
 exports.changePassword = async (req, res) => {
@@ -76,7 +73,6 @@ exports.changePassword = async (req, res) => {
     const result = await authServices.changePassword(userId, oldPassword, newPassword);
     res.status(200).json(result);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't change your password") });
   }
 }

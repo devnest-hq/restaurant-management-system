@@ -1,4 +1,5 @@
 const adminService = require("../services/admin.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 exports.createStaff = async (req, res) => {
   try {
@@ -6,8 +7,7 @@ exports.createStaff = async (req, res) => {
     const user = await adminService.createStaff(name, email, role);
     res.status(201).json(user);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't create staff member") });
   }
 };
 
@@ -19,8 +19,7 @@ exports.getAllStaff = async (req, res) => {
     }
     res.status(200).json(staff);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch staff members") });
   }
 };
 
@@ -33,8 +32,7 @@ exports.getStaffById = async (req, res) => {
     }
     res.status(200).json(staff);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch staff member") });
   }
 };
 
@@ -51,8 +49,7 @@ exports.updateStaff = async (req, res) => {
     }
     res.status(200).json(updatedStaff);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't update staff member") });
   }
 };
 
@@ -84,11 +81,9 @@ exports.deleteStaff = async (req, res) => {
       data: deletedStaff,
     });
   } catch (err) {
-    console.error("Delete staff error:", err);
-
     return res.status(err.status || 500).json({
       success: false,
-      message: err.status ? err.message : "Internal server error",
+      message: getSafeErrorMessage(err, "Couldn't delete staff member"),
     });
   }
 };
@@ -115,11 +110,9 @@ exports.mostOrderedMenuItems = async (req, res) => {
       data: mostOrderedItems,
     });
   } catch (err) {
-    console.error("Most ordered menu items error:", err);
-
     return res.status(err.status || 500).json({
       success: false,
-      message: err.status ? err.message : "Internal server error",
+      message: getSafeErrorMessage(err, "Couldn't fetch most ordered items"),
     });
   }
 };
@@ -146,11 +139,9 @@ exports.salesReport = async (req, res) => {
       data: report,
     });
   } catch (err) {
-    console.error("Sales report error:", err);
-
     return res.status(err.status || 500).json({
       success: false,
-      message: err.status ? err.message : "Internal server error",
+      message: getSafeErrorMessage(err, "Couldn't generate sales report"),
     });
   }
 };
@@ -165,11 +156,9 @@ exports.dashboardStats = async (req, res) => {
       data: stats,
     });
   } catch (err) {
-    console.error("Dashboard stats error:", err);
-
     return res.status(err.status || 500).json({
       success: false,
-      message: err.status ? err.message : "Internal server error",
+      message: getSafeErrorMessage(err, "Couldn't load dashboard stats"),
     });
   }
 };

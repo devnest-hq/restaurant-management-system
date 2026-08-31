@@ -1,4 +1,5 @@
 const menuItemIngredientService = require("../services/menuItemIngredient.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 exports.addIngredientsToMenuItem = async (req, res) => {
   try {
@@ -21,7 +22,7 @@ exports.addIngredientsToMenuItem = async (req, res) => {
 
     return res.status(err.status || 500).json({
       success: false,
-      error: err.message,
+      error: getSafeErrorMessage(err, "Couldn't add ingredients to menu item"),
     });
   }
 };

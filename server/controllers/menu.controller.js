@@ -1,4 +1,5 @@
 const menuServices = require("../services/menu.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 exports.createMenuItem = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ exports.createMenuItem = async (req, res) => {
     const menuItem = await menuServices.createMenuItem({ name, category, price, description, imageUrl, imagePublicId });
     res.status(201).json({ menuItem });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't create menu item") });
   }
 }
 
@@ -21,8 +22,7 @@ exports.updateMenuItem = async (req, res) => {
     const updatedMenuItem = await menuServices.updateMenuItem(id, { name, category, price, description, available, imageUrl, imagePublicId });
     res.status(200).json(updatedMenuItem);
   } catch (err) {
-    console.log(err);
-    res.status(err.status || 500).json({ error: "Can't update menu item "});
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't update menu item") });
   }
 }
 
@@ -31,8 +31,7 @@ exports.getAllMenuItems = async (req, res) => {
     const menuItems = await menuServices.getAllMenuItems(req.query);
     res.status(200).json(menuItems);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "can't fetch Menu items" })
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch menu items") });
   }
 }
 
@@ -41,8 +40,7 @@ exports.getMenuItemById = async (req, res) => {
     const menuItem = await menuServices.getMenuItemById(req.params.id);
     res.status(200).json(menuItem)
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch menu item") });
   }
 }
 
@@ -51,7 +49,6 @@ exports.deleteMenuItem = async (req, res) => {
     const item = await menuServices.deleteMenuItem(req.params.id);
     res.status(200).json(item);
   } catch(err)  {
-    console.log(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't delete menu item") });
   }
 }
