@@ -1,5 +1,7 @@
 const prisma = require("../prisma/client");
+const inventoryService = require("./inventory.service");
 const invoiceService = require("./invoice.service");
+const { createNotification, notifyRoles } = require("./notification.service");
 
 const VALID_STATUSES = ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"];
 
@@ -41,6 +43,20 @@ exports.createOrder = async ({ customerId, items }) => {
   });
 
   await invoiceService.ensureInvoiceExists(order.id);
+
+  await notifyRoles(
+    ["ADMIN", "CHEF"],
+    {
+      type: "NEW_ORDER",
+      message: `Your order ${order.id} has been placed successfully. Total: $${order.totalPrice.toFixed(2)}.`,
+    }
+  );
+  
+  await createNotification({
+    userId: customerId,
+    type: "ORDER_PLACED",
+    message: `Your order ${order.id} has been placed successfully. Total: $${order.totalPrice.toFixed(2)}.`,
+  });
 
   return order;
 };
@@ -90,7 +106,7 @@ exports.updateOrderStatus = async (id, status) => {
     throw new Error(`Cannot change status of a ${currentOrder.status} order`);
   }
 
-  return prisma.order.update({
+  const order = await prisma.order.update({
     where: { id: orderId },
     data: { status },
     include: {
