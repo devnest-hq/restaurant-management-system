@@ -1,5 +1,6 @@
 const orderService = require("../services/orders.service");
 const invoiceService = require("../services/invoice.service");
+const getSafeErrorMessage = require("../utils/errorMessage");
 
 
 exports.createOrder = async (req, res) => {
@@ -13,8 +14,7 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json(order);
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    res.status(err.status || 400).json({ error: getSafeErrorMessage(err, "Couldn't create order") });
   }
 };
 
@@ -25,8 +25,7 @@ exports.getAllOrders = async (req, res) => {
       : await orderService.getAllOrders();
     res.json(orders);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch orders" });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch orders") });
   }
 };
 
@@ -41,8 +40,7 @@ exports.getOrderById = async (req, res) => {
 
     res.json(order);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch order" });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't fetch order") });
   }
 };
 
@@ -55,8 +53,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json(order);
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
+    res.status(err.status || 400).json({ error: getSafeErrorMessage(err, "Failed to update order status") });
   }
 };
 
@@ -65,8 +62,7 @@ exports.getKitchenOrders = async (req, res) => {
     const orders = await orderService.getKitchenOrders();
     res.json(orders);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch kitchen orders" });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Failed to fetch kitchen orders") });
   }
 };
 
@@ -75,7 +71,6 @@ exports.getInvoice = async (req, res) => {
     const invoice = await invoiceService.getInvoiceByOrderId(req.params.id, req.user);
     res.status(200).json(invoice);
   } catch (err) {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Failed to fetch invoice") });
   }
 };

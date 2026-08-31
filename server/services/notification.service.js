@@ -2,21 +2,18 @@ const prisma = require("../prisma/client");
 
 exports.createNotification = async ({ userId, type, message }) => {
   if (!userId || !type || !message) {
-    const err = new Error("Provide the notifications type, message and the user it belongs to");
+    const err = new Error("Provide the notification type, message, and the user it belongs to");
+    err.status = 400;
     throw err;
   }
 
-  try {
-    return await prisma.notification.create({
-      data: {
-        userId: parseInt(userId),
-        type,
-        message
-      }
-    });
-  } catch (err) {
-    throw err;
-  }
+  return prisma.notification.create({
+    data: {
+      userId: parseInt(userId),
+      type,
+      message
+    }
+  });
 }
 
 exports.notifyRoles = async (roles, { type, message }, tx = prisma) => {
@@ -33,14 +30,15 @@ exports.notifyRoles = async (roles, { type, message }, tx = prisma) => {
 };
 
 exports.getNotifications = async (userId) => {
-  if (!userId || userId === undefined) {
+  if (!userId) {
     const err = new Error("Provide user ID");
     err.status = 400;
     throw err;
   }
 
-  return await prisma.notification.findMany({
-    where: { userId: parseInt(userId) }
+  return prisma.notification.findMany({
+    where: { userId: parseInt(userId) },
+    orderBy: { createdAt: "desc" }
   });
 }
 
@@ -49,20 +47,26 @@ exports.readNotification = async (id, userId) => {
     where: { id: parseInt(id) }
   });
 
-  if (userId !== notification.userId) {
-    const err = new Error("Access Denied: notification owned by another user");
+  if (!notification) {
+    const err = new Error("Notification not found");
     err.status = 404;
     throw err;
   }
 
-  return await prisma.notification.update({
+  if (notification.userId !== userId) {
+    const err = new Error("Access denied");
+    err.status = 403;
+    throw err;
+  }
+
+  return prisma.notification.update({
     where: { id: parseInt(id) },
     data: { isRead: true }
   });
 }
 
 exports.readAllNotifications = async (userId) => {
-  await prisma.notification.updateMany({
+  return prisma.notification.updateMany({
     where: { userId: parseInt(userId) },
     data: { isRead: true }
   });
