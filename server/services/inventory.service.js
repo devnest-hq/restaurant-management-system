@@ -1,4 +1,20 @@
 const prisma = require("../prisma/client");
+const { notifyRoles } = require("../services/notification.service");
+
+exports.checkAndNotifyLowStock = async (inventoryItem, tx = prisma) => {
+  if (inventoryItem.quantity > inventoryItem.lowStockThreshold) {
+    return;
+  }
+
+  await notifyRoles(
+    ["ADMIN", "CHEF"],
+    {
+      type: "LOW_STOCK",
+      message: `${inventoryItem.name} is low in stock: ${inventoryItem.quantity} ${inventoryItem.unit} remaining. Please restock.`,
+    },
+    tx
+  );
+}
 
 exports.createInventoryItem = async ({ name, quantity, unit, lowStockThreshold, supplier }) => {
   if (!name|| !unit) {
@@ -109,10 +125,15 @@ exports.updateInventoryItem = async (id, { name, quantity, unit, lowStockThresho
     throw new Error("Quantity and low stock threshold must be numbers");
   }
 
-  return prisma.inventoryItem.update({
+  const updatedItem = await prisma.inventoryItem.update({
     where: { id: parseInt(id) },
     data: { name, quantity, unit, lowStockThreshold, supplier }
   });
+
+  // Check and notify if stock is low
+  await exports.checkAndNotifyLowStock(updatedItem);
+
+  return updatedItem;
 };
 
 exports.deleteInventoryItem = async (id) => {

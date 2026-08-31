@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth.routes");
 const menuRoutes = require("./routes/menu.routes");
 const reservationRoutes = require("./routes/reservations.routes");
 const tableRoutes = require("./routes/table.routes");
+const notificationRoutes = require("./routes/notification.routes");
 const ordersRoutes = require("./routes/orders.routes");
 const inventoryRoutes = require("./routes/inventory.routes");
 const adminRoutes = require("./routes/admin.routes");

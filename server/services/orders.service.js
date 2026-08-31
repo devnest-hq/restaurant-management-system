@@ -101,6 +101,14 @@ exports.updateOrderStatus = async (id, status) => {
       },
     },
   });
+
+  await createNotification({
+    userId: order.customerId,
+    type: "ORDER STATUS UPDATED",
+    message: `Your order ${order.id} status has been updated to ${status}.`
+  });
+
+  return order;
 };
 
 
@@ -182,6 +190,11 @@ exports.completeOrder = async (orderId) => {
           `Insufficient inventory for inventory item ${inventoryId}`
         );
       }
+
+      const inventoryItem = await tx.inventoryItem.findUnique({
+        where: { id: inventoryId }
+      });
+      await inventoryService.checkAndNotifyLowStock(inventoryItem, tx);
     }
 
     // 5. Mark order as SERVED
@@ -200,6 +213,12 @@ exports.completeOrder = async (orderId) => {
     });
 
     return completedOrder;
+  });
+
+  await createNotification({
+    userId: result.customerId,
+    type: "ORDER COMPLETED",
+    message: `Your order ${result.id} has been completed and served. Enjoy your meal!`
   });
 
   return result;

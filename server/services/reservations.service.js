@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const { createNotification } = require("../services/notification.service");
 
 exports.createReservation = async(customerId, tableId, date, timeSlot, guestCount) => {
   if (!date || !timeSlot || !guestCount) {
@@ -33,6 +34,17 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
         guestCount
       }
     });
+
+    try {
+      await createNotification({
+        userId: customerId,
+        type: "Reservation",
+        message: `Your reservation for table ${tableId} on ${date} at ${timeSlot} has been created.`
+      });
+    } catch (err) {
+      console.error("Error creating notification:", err);
+    }
+
     return reservation;
   } catch (err) {
     if (err.code === "P2002") {
@@ -101,6 +113,12 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await prisma.reservation.delete({
       where: { id: parseInt(id) }
     });
+
+    await createNotification({
+      userId: user.userId,
+      type: "RESERVATION CANCELLED",
+      message: `Your Reservation for table ${reservation.tableId} on ${date} at ${timeSlot} has been cancelled.`
+    });
     return { message: "Reservation cancelled" }
   }
   
@@ -110,10 +128,19 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     if (timeSlot !== undefined) data.timeSlot = timeSlot;
     if (guestCount !== undefined) data.guestCount = guestCount;
 
-    return await prisma.reservation.update({
+    const updatedReservation = await prisma.reservation.update({
       where: { id: parseInt(id) },
       data
     });
+
+    await createNotification({
+      userId: user.userId,
+      type: "RESERVATION UPDATED",
+      message: `Your Reservation for table `
+    });
+
+    return updatedReservation;
+
   } catch (err) {
     if (err.code === "P2002") {
       const error = new Error("This table is already booked for that time and date");
@@ -123,4 +150,3 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     throw err;
   }
 }
-
