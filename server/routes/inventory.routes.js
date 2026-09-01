@@ -5,7 +5,7 @@ const verify = require("../middleware/verify.JWT");
 const verifyRole = require("../middleware/verify.role");
 const requirePasswordChange = require("../middleware/verify.password.change");
 const { validate, validateParams } = require("../middleware/validate");
-const { createInventoryItemSchema, updateInventoryItemSchema } = require("../schemas/inventory.schema");
+const { createInventoryItemSchema, createInventoryItemsBulkSchema, updateInventoryItemSchema } = require("../schemas/inventory.schema");
 const { idParamSchema } = require("../schemas/common.schema");
 
 router.use(verify);

@@ -39,7 +39,7 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
       await createNotification({
         userId: customerId,
         type: "Reservation",
-        message: `Your reservation for table ${tableId} on ${date} at ${timeSlot} has been created.`
+        message: `Your reservation for table ${table.tableNumber} on ${date} at ${timeSlot} has been created.`
       });
     } catch (err) {
       console.error("Error creating notification:", err);
@@ -117,7 +117,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await createNotification({
       userId: user.userId,
       type: "RESERVATION CANCELLED",
-      message: `Your Reservation for table ${reservation.tableId} on ${date} at ${timeSlot} has been cancelled.`
+      message: `Your Reservation for table ${table.tableNumber} on ${date} at ${timeSlot} has been cancelled.`
     });
     return { message: "Reservation cancelled" }
   }
@@ -136,7 +136,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await createNotification({
       userId: user.userId,
       type: "RESERVATION UPDATED",
-      message: `Your Reservation for table `
+      message: `Your Reservation for table ${table.tableNumber} on ${date} at ${timeSlot} has been updated.`
     });
 
     return updatedReservation;

@@ -1,5 +1,11 @@
 const prisma = require("../prisma/client");
 
+let io;
+
+exports.setSocketIO = (socketIO) => {
+  io = socketIO;
+}
+
 exports.createNotification = async ({ userId, type, message }) => {
   if (!userId || !type || !message) {
     const err = new Error("Provide the notification type, message, and the user it belongs to");
@@ -7,13 +13,17 @@ exports.createNotification = async ({ userId, type, message }) => {
     throw err;
   }
 
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: {
       userId: parseInt(userId),
       type,
       message
     }
   });
+
+  if (io) io.to(`user-${userId}`).emit("notification", notification);
+  
+  return notification;
 }
 
 exports.notifyRoles = async (roles, { type, message }, tx = prisma) => {
