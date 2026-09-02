@@ -1,14 +1,15 @@
 const prisma = require("../prisma/client");
 const cloudinary = require("../config/cloudinary");
+const { getCache, setCache, deleteCachePattern } = require("../utils/cache");
 
-exports.createMenuItem = ({ name, category, price, description, imageUrl, imagePublicId }) => {
+exports.createMenuItem = async ({ name, category, price, description, imageUrl, imagePublicId }) => {
   if (!name || !category || !price) {
     const err = new Error("All fields are required");
     err.status = 400;
     throw err;
   }
 
-  return prisma.menuItem.create({
+  const item = await prisma.menuItem.create({
     data: {
       name,
       category,
@@ -18,6 +19,9 @@ exports.createMenuItem = ({ name, category, price, description, imageUrl, imageP
       imagePublicId
     }
   });
+
+  await deleteCachePattern("menu:*");
+  return item;
 }
 
 exports.updateMenuItem = async (id, { name, price, available, category, description, imageUrl, imagePublicId }) => {
@@ -62,15 +66,22 @@ exports.updateMenuItem = async (id, { name, price, available, category, descript
     }
   }
 
+  await deleteCachePattern("menu:*");
   return updatedItem;
 };
 
 exports.getAllMenuItems = async ({ category, available } = {}) => {
+  const cacheKey = `menu:list:${category || "all"}:${available ?? "all"}`;
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
   const where = {};
   if (category) where.category = category;
   if (available !== undefined) where.available = available === "true";
 
-  return prisma.menuItem.findMany({ where });
+  const items = await prisma.menuItem.findMany({ where });
+  await setCache(cacheKey, items, 300); // 5 min
+  return items;
 }
 
 exports.getMenuItemById = async (id) => {
@@ -106,8 +117,9 @@ exports.deleteMenuItem = async (id) => {
     }
   }
 
+  let deleted;
   try {
-    return await prisma.menuItem.delete({
+    deleted = await prisma.menuItem.delete({
       where: { id: parseInt(id) }
     });
   } catch (err) {
@@ -119,4 +131,7 @@ exports.deleteMenuItem = async (id) => {
 
     throw err;
   }
+
+  await deleteCachePattern("menu:*");
+  return deleted;
 };

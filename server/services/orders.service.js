@@ -48,7 +48,7 @@ exports.createOrder = async ({ customerId, items }) => {
     ["ADMIN", "CHEF"],
     {
       type: "NEW_ORDER",
-      message: `Your order ${order.id} has been placed successfully. Total: $${order.totalPrice.toFixed(2)}.`,
+      message: `A new order ${order.id} has been placed successfully. Total: $${order.totalPrice.toFixed(2)}.`,
     }
   );
   
@@ -92,6 +92,10 @@ exports.updateOrderStatus = async (id, status) => {
     );
   }
 
+  if (status === "READY") {
+    return exports.markOrderReady(orderId);
+  }
+
   if (status === "SERVED") {
     return exports.completeOrder(orderId);
   }
@@ -121,18 +125,17 @@ exports.updateOrderStatus = async (id, status) => {
   await createNotification({
     userId: order.customerId,
     type: "ORDER STATUS UPDATED",
-    message: `Your order ${order.id} status has been updated to ${status}.`
+    message: `Your order ${order.id} is now ${status}.`
   });
 
   return order;
 };
 
-
-exports.completeOrder = async (orderId) => {
+// Deducts inventory the moment the kitchen actually finishes preparing
+exports.markOrderReady = async (orderId) => {
   const id = parseInt(orderId);
 
   const result = await prisma.$transaction(async (tx) => {
-    // 1. Get the order and its ingredients
     const order = await tx.order.findUnique({
       where: { id },
       include: {
@@ -152,7 +155,73 @@ exports.completeOrder = async (orderId) => {
       throw new Error("Order not found");
     }
 
-    // 2. Prevent duplicate completion
+    if (order.status === "SERVED") {
+      throw new Error("Order has already been completed");
+    }
+
+    if (order.status === "CANCELLED") {
+      throw new Error("Cancelled orders cannot be marked ready");
+    }
+
+    if (order.status !== "PREPARING") {
+      throw new Error("Only orders currently being prepared can be marked ready");
+    }
+
+    const inventoryUsage = new Map();
+
+    for (const orderItem of order.items) {
+      for (const ingredient of orderItem.menuItem.menuItemIngredients) {
+        const amountUsed = ingredient.quantityUsed * orderItem.quantity;
+        const currentUsage = inventoryUsage.get(ingredient.inventoryItemId) || 0;
+        inventoryUsage.set(ingredient.inventoryItemId, currentUsage + amountUsed);
+      }
+    }
+
+    for (const [inventoryId, amountUsed] of inventoryUsage) {
+      const updated = await tx.inventoryItem.updateMany({
+        where: {
+          id: inventoryId,
+          quantity: { gte: amountUsed },
+        },
+        data: {
+          quantity: { decrement: amountUsed },
+        },
+      });
+
+      if (updated.count === 0) {
+        throw new Error(`Insufficient inventory for inventory item ${inventoryId}`);
+      }
+    }
+
+    return tx.order.update({
+      where: { id },
+      data: { status: "READY" },
+      include: {
+        items: { include: { menuItem: true } },
+      },
+    });
+  });
+
+  await createNotification({
+    userId: result.customerId,
+    type: "ORDER STATUS UPDATED",
+    message: `Your order ${result.id} is now ${result.status}.`
+  });
+
+  return result;
+};
+
+// itself was already prepared (and inventory already deducted) at READY.
+exports.completeOrder = async (orderId) => {
+  const id = parseInt(orderId);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { id } });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
     if (order.status === "SERVED") {
       throw new Error("Order has already been completed");
     }
@@ -165,70 +234,17 @@ exports.completeOrder = async (orderId) => {
       throw new Error("Only ready orders can be completed");
     }
 
+    // Safety net: guarantees an invoice exists even if this order
+    // somehow predates invoice generation at order placement.
     await invoiceService.ensureInvoiceExists(id, tx);
 
-    // 3. Calculate inventory usage
-    const inventoryUsage = new Map();
-
-    for (const orderItem of order.items) {
-      for (const ingredient of orderItem.menuItem.menuItemIngredients) {
-        const amountUsed =
-          ingredient.quantityUsed * orderItem.quantity;
-
-        const currentUsage =
-          inventoryUsage.get(ingredient.inventoryItemId) || 0;
-
-        inventoryUsage.set(
-          ingredient.inventoryItemId,
-          currentUsage + amountUsed
-        );
-      }
-    }
-
-    // 4. Atomically deduct inventory
-    for (const [inventoryId, amountUsed] of inventoryUsage) {
-      const updated = await tx.inventoryItem.updateMany({
-        where: {
-          id: inventoryId,
-          quantity: {
-            gte: amountUsed,
-          },
-        },
-        data: {
-          quantity: {
-            decrement: amountUsed,
-          },
-        },
-      });
-
-      if (updated.count === 0) {
-        throw new Error(
-          `Insufficient inventory for inventory item ${inventoryId}`
-        );
-      }
-
-      const inventoryItem = await tx.inventoryItem.findUnique({
-        where: { id: inventoryId }
-      });
-      await inventoryService.checkAndNotifyLowStock(inventoryItem, tx);
-    }
-
-    // 5. Mark order as SERVED
-    const completedOrder = await tx.order.update({
+    return tx.order.update({
       where: { id },
-      data: {
-        status: "SERVED",
-      },
+      data: { status: "SERVED" },
       include: {
-        items: {
-          include: {
-            menuItem: true,
-          },
-        },
+        items: { include: { menuItem: true } },
       },
     });
-
-    return completedOrder;
   });
 
   await createNotification({

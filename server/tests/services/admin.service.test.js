@@ -6,8 +6,14 @@ jest.mock("bcrypt", () => ({
   hash: jest.fn(),
 }));
 
+jest.mock("../../utils/cache", () => ({
+  getCache: jest.fn(),
+  setCache: jest.fn(),
+}));
+
 const prismaMock = require("../../prisma/client.mock");
 const bcrypt = require("bcrypt");
+const { getCache, setCache } = require("../../utils/cache");
 const adminService = require("../../services/admin.service");
 
 describe("admin.service", () => {
@@ -18,6 +24,10 @@ describe("admin.service", () => {
     process.env.CHEFS_ACCESS_TOKEN_SECRET = "chef-secret";
 
     bcrypt.hash.mockResolvedValue("hashed-password");
+
+    // Dashboard should normally miss cache during tests
+    getCache.mockResolvedValue(null);
+    setCache.mockResolvedValue(undefined);
   });
 
   // =========================================================
@@ -163,7 +173,7 @@ describe("admin.service", () => {
       );
     });
 
-    it("creates a waiter successfully", async () => {
+    it("creates a waiter successfully without returning password", async () => {
       prismaMock.user.create.mockResolvedValue({
         id: 1,
         name: "John Doe",
@@ -186,9 +196,11 @@ describe("admin.service", () => {
         role: "WAITER",
         mustChangePassword: true,
       });
+
+      expect(result.password).toBeUndefined();
     });
 
-    it("creates a chef successfully", async () => {
+    it("creates a chef successfully without returning password", async () => {
       prismaMock.user.create.mockResolvedValue({
         id: 2,
         name: "Jane Doe",
@@ -211,23 +223,6 @@ describe("admin.service", () => {
         role: "CHEF",
         mustChangePassword: true,
       });
-    });
-
-    it("does not return the password", async () => {
-      prismaMock.user.create.mockResolvedValue({
-        id: 1,
-        name: "John Doe",
-        email: "john@test.com",
-        password: "hashed-password",
-        role: "WAITER",
-        mustChangePassword: true,
-      });
-
-      const result = await adminService.createStaff(
-        "John Doe",
-        "john@test.com",
-        "WAITER"
-      );
 
       expect(result.password).toBeUndefined();
     });
@@ -683,20 +678,31 @@ describe("admin.service", () => {
   // =========================================================
 
   describe("dashboardData", () => {
-    it("returns all dashboard statistics", async () => {
+    const setupDashboardMocks = ({
+      totalOrders = 100,
+      completedOrders = 70,
+      cancelledOrders = 10,
+      revenue = 500000,
+      menuItems = 25,
+      inventoryItems = 40,
+    } = {}) => {
       prismaMock.order.count
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(70)
-        .mockResolvedValueOnce(10);
+        .mockResolvedValueOnce(totalOrders)
+        .mockResolvedValueOnce(completedOrders)
+        .mockResolvedValueOnce(cancelledOrders);
 
       prismaMock.order.aggregate.mockResolvedValue({
         _sum: {
-          totalPrice: 500000,
+          totalPrice: revenue,
         },
       });
 
-      prismaMock.menuItem.count.mockResolvedValue(25);
-      prismaMock.inventoryItem.count.mockResolvedValue(40);
+      prismaMock.menuItem.count.mockResolvedValue(menuItems);
+      prismaMock.inventoryItem.count.mockResolvedValue(inventoryItems);
+    };
+
+    it("returns all dashboard statistics", async () => {
+      setupDashboardMocks();
 
       const result = await adminService.dashboardData();
 
@@ -708,22 +714,51 @@ describe("admin.service", () => {
         totalMenuItems: 25,
         totalInventoryItems: 40,
       });
+
+      expect(getCache).toHaveBeenCalledWith("admin:dashboard");
+
+      expect(setCache).toHaveBeenCalledWith(
+        "admin:dashboard",
+        {
+          totalOrders: 100,
+          completedOrders: 70,
+          cancelledOrders: 10,
+          totalRevenue: 500000,
+          totalMenuItems: 25,
+          totalInventoryItems: 40,
+        },
+        60
+      );
+    });
+
+    it("returns cached dashboard data without querying the database", async () => {
+      const cachedData = {
+        totalOrders: 50,
+        completedOrders: 40,
+        cancelledOrders: 5,
+        totalRevenue: 250000,
+        totalMenuItems: 15,
+        totalInventoryItems: 20,
+      };
+
+      getCache.mockResolvedValue(cachedData);
+
+      const result = await adminService.dashboardData();
+
+      expect(result).toEqual(cachedData);
+
+      expect(getCache).toHaveBeenCalledWith("admin:dashboard");
+
+      expect(prismaMock.order.count).not.toHaveBeenCalled();
+      expect(prismaMock.order.aggregate).not.toHaveBeenCalled();
+      expect(prismaMock.menuItem.count).not.toHaveBeenCalled();
+      expect(prismaMock.inventoryItem.count).not.toHaveBeenCalled();
+
+      expect(setCache).not.toHaveBeenCalled();
     });
 
     it("counts all orders", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(70)
-        .mockResolvedValueOnce(10);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: 500000,
-        },
-      });
-
-      prismaMock.menuItem.count.mockResolvedValue(25);
-      prismaMock.inventoryItem.count.mockResolvedValue(40);
+      setupDashboardMocks();
 
       await adminService.dashboardData();
 
@@ -731,19 +766,7 @@ describe("admin.service", () => {
     });
 
     it("counts only SERVED orders as completed", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(70)
-        .mockResolvedValueOnce(10);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: 500000,
-        },
-      });
-
-      prismaMock.menuItem.count.mockResolvedValue(25);
-      prismaMock.inventoryItem.count.mockResolvedValue(40);
+      setupDashboardMocks();
 
       await adminService.dashboardData();
 
@@ -755,19 +778,7 @@ describe("admin.service", () => {
     });
 
     it("counts only CANCELLED orders as cancelled", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(70)
-        .mockResolvedValueOnce(10);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: 500000,
-        },
-      });
-
-      prismaMock.menuItem.count.mockResolvedValue(25);
-      prismaMock.inventoryItem.count.mockResolvedValue(40);
+      setupDashboardMocks();
 
       await adminService.dashboardData();
 
@@ -779,19 +790,7 @@ describe("admin.service", () => {
     });
 
     it("calculates revenue from SERVED orders only", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(100)
-        .mockResolvedValueOnce(70)
-        .mockResolvedValueOnce(10);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: 500000,
-        },
-      });
-
-      prismaMock.menuItem.count.mockResolvedValue(25);
-      prismaMock.inventoryItem.count.mockResolvedValue(40);
+      setupDashboardMocks();
 
       await adminService.dashboardData();
 
@@ -806,19 +805,14 @@ describe("admin.service", () => {
     });
 
     it("returns zero revenue when there is no served order revenue", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: null,
-        },
+      setupDashboardMocks({
+        totalOrders: 0,
+        completedOrders: 0,
+        cancelledOrders: 0,
+        revenue: null,
+        menuItems: 0,
+        inventoryItems: 0,
       });
-
-      prismaMock.menuItem.count.mockResolvedValue(0);
-      prismaMock.inventoryItem.count.mockResolvedValue(0);
 
       const result = await adminService.dashboardData();
 
@@ -846,19 +840,14 @@ describe("admin.service", () => {
     });
 
     it("counts menu items and inventory items", async () => {
-      prismaMock.order.count
-        .mockResolvedValueOnce(10)
-        .mockResolvedValueOnce(5)
-        .mockResolvedValueOnce(2);
-
-      prismaMock.order.aggregate.mockResolvedValue({
-        _sum: {
-          totalPrice: 10000,
-        },
+      setupDashboardMocks({
+        totalOrders: 10,
+        completedOrders: 5,
+        cancelledOrders: 2,
+        revenue: 10000,
+        menuItems: 8,
+        inventoryItems: 12,
       });
-
-      prismaMock.menuItem.count.mockResolvedValue(8);
-      prismaMock.inventoryItem.count.mockResolvedValue(12);
 
       const result = await adminService.dashboardData();
 
