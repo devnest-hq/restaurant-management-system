@@ -28,6 +28,8 @@
     "multer": "^2.2.0",
     "multer-storage-cloudinary-v2": "^1.0.3",
     "pg": "^8.23.0",
+    "rate-limit-redis": "^6.0.1",
+    "redis": "^6.2.1",
     "socket.io": "^4.8.3",
     "zod": "^4.4.3"
   },

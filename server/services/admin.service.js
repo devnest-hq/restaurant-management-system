@@ -1,5 +1,6 @@
 const prisma = require("../prisma/client");
 const bcrypt = require("bcrypt");
+const { getCache, setCache } = require("../utils/cache");
 
 exports.createStaff = async (name, email, role) => {
   if (!name || !email || !role) {
@@ -66,10 +67,8 @@ exports.getStaffById = async (id) => {
 exports.updateStaff = async (id, name, email, role) => {
   const staffId = parseInt(id);
 
-  // Only these roles can be assigned to staff
   const allowedRoles = ["WAITER", "CHEF"];
 
-  // Validate the new role
   if (!allowedRoles.includes(role)) {
     return {
       error: true,
@@ -77,7 +76,6 @@ exports.updateStaff = async (id, name, email, role) => {
     };
   }
 
-  // Make sure the existing user is actually a staff member
   const existing = await prisma.user.findUnique({
     where: { id: staffId },
   });
@@ -192,6 +190,10 @@ exports.salesReport = async (period = "daily") => {
 
 // Aggregation data from orders, menu, and inventory for admin dashboard
 exports.dashboardData = async () => {
+  const cacheKey = "admin:dashboard";
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
   const [
     totalOrders,
     completedOrders,
@@ -200,24 +202,20 @@ exports.dashboardData = async () => {
     totalMenuItems,
     totalInventoryItems,
   ] = await Promise.all([
-    // All orders
     prisma.order.count(),
 
-    // Successfully completed orders
     prisma.order.count({
       where: {
         status: "SERVED",
       },
     }),
 
-    // Cancelled orders
     prisma.order.count({
       where: {
         status: "CANCELLED",
       },
     }),
 
-    // Revenue from completed orders only
     prisma.order.aggregate({
       where: {
         status: "SERVED",
@@ -227,14 +225,12 @@ exports.dashboardData = async () => {
       },
     }),
 
-    // Total menu items
     prisma.menuItem.count(),
 
-    // Total inventory items
     prisma.inventoryItem.count(),
   ]);
 
-  return {
+  const result = {
     totalOrders,
     completedOrders,
     cancelledOrders,
@@ -242,4 +238,7 @@ exports.dashboardData = async () => {
     totalMenuItems,
     totalInventoryItems,
   };
+
+  await setCache(cacheKey, result, 60); // 1 min
+  return result;
 };

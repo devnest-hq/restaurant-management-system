@@ -2,8 +2,13 @@ jest.mock("../../prisma/client", () =>
   require("../../prisma/client.mock")
 );
 
+jest.mock("../../services/notification.service", () => ({
+  notifyRoles: jest.fn().mockResolvedValue(undefined),
+}));
+
 const prismaMock = require("../../prisma/client.mock");
 const inventoryService = require("../../services/inventory.service");
+const { notifyRoles } = require("../../services/notification.service");
 
 describe("inventory.service", () => {
   beforeEach(() => {
@@ -525,6 +530,70 @@ describe("inventory.service", () => {
   });
 
   // =========================================================
+  // checkAndNotifyLowStock
+  // =========================================================
+
+  describe("checkAndNotifyLowStock", () => {
+    it("does not notify when stock is above the threshold", async () => {
+      const inventoryItem = {
+        id: 1,
+        name: "Rice",
+        quantity: 20,
+        unit: "kg",
+        lowStockThreshold: 10,
+      };
+
+      await inventoryService.checkAndNotifyLowStock(inventoryItem);
+
+      expect(notifyRoles).not.toHaveBeenCalled();
+    });
+
+    it("notifies ADMIN and CHEF when stock is below the threshold", async () => {
+      const inventoryItem = {
+        id: 1,
+        name: "Rice",
+        quantity: 5,
+        unit: "kg",
+        lowStockThreshold: 10,
+      };
+
+      await inventoryService.checkAndNotifyLowStock(inventoryItem);
+
+      expect(notifyRoles).toHaveBeenCalledWith(
+        ["ADMIN", "CHEF"],
+        {
+          type: "LOW_STOCK",
+          message:
+            "Rice is low in stock: 5 kg remaining. Please restock.",
+        },
+        prismaMock
+      );
+    });
+
+    it("notifies when stock exactly equals the threshold", async () => {
+      const inventoryItem = {
+        id: 1,
+        name: "Tomato",
+        quantity: 10,
+        unit: "pcs",
+        lowStockThreshold: 10,
+      };
+
+      await inventoryService.checkAndNotifyLowStock(inventoryItem);
+
+      expect(notifyRoles).toHaveBeenCalledWith(
+        ["ADMIN", "CHEF"],
+        {
+          type: "LOW_STOCK",
+          message:
+            "Tomato is low in stock: 10 pcs remaining. Please restock.",
+        },
+        prismaMock
+      );
+    });
+  });
+
+  // =========================================================
   // updateInventoryItem
   // =========================================================
 
@@ -716,6 +785,96 @@ describe("inventory.service", () => {
       expect(result).toEqual(updatedItem);
     });
 
+    it("notifies ADMIN and CHEF when updated inventory is at or below low stock threshold", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Rice",
+        quantity: 50,
+        unit: "kg",
+        lowStockThreshold: 10,
+        supplier: "ABC Foods",
+      };
+
+      const updatedItem = {
+        ...existingItem,
+        quantity: 10,
+      };
+
+      prismaMock.inventoryItem.findUnique.mockResolvedValue(existingItem);
+      prismaMock.inventoryItem.update.mockResolvedValue(updatedItem);
+
+      await inventoryService.updateInventoryItem(1, {
+        quantity: 10,
+      });
+
+      expect(notifyRoles).toHaveBeenCalledWith(
+        ["ADMIN", "CHEF"],
+        {
+          type: "LOW_STOCK",
+          message:
+            "Rice is low in stock: 10 kg remaining. Please restock.",
+        },
+        prismaMock
+      );
+    });
+
+    it("does not notify when updated inventory is above low stock threshold", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Rice",
+        quantity: 50,
+        unit: "kg",
+        lowStockThreshold: 10,
+        supplier: "ABC Foods",
+      };
+
+      const updatedItem = {
+        ...existingItem,
+        quantity: 20,
+      };
+
+      prismaMock.inventoryItem.findUnique.mockResolvedValue(existingItem);
+      prismaMock.inventoryItem.update.mockResolvedValue(updatedItem);
+
+      await inventoryService.updateInventoryItem(1, {
+        quantity: 20,
+      });
+
+      expect(notifyRoles).not.toHaveBeenCalled();
+    });
+
+    it("notifies when quantity exactly equals the low stock threshold", async () => {
+      const updatedItem = {
+        id: 1,
+        name: "Tomato",
+        quantity: 10,
+        unit: "pcs",
+        lowStockThreshold: 10,
+        supplier: "ABC Foods",
+      };
+
+      prismaMock.inventoryItem.findUnique.mockResolvedValue({
+        ...updatedItem,
+        quantity: 20,
+      });
+
+      prismaMock.inventoryItem.update.mockResolvedValue(updatedItem);
+
+      await inventoryService.updateInventoryItem(1, {
+        quantity: 10,
+      });
+
+      expect(notifyRoles).toHaveBeenCalledWith(
+        ["ADMIN", "CHEF"],
+        {
+          type: "LOW_STOCK",
+          message:
+            "Tomato is low in stock: 10 pcs remaining. Please restock.",
+        },
+        prismaMock
+      );
+    });
+
     it("parses string IDs into integers", async () => {
       prismaMock.inventoryItem.findUnique.mockResolvedValue({
         id: 5,
@@ -724,6 +883,7 @@ describe("inventory.service", () => {
       prismaMock.inventoryItem.update.mockResolvedValue({
         id: 5,
         quantity: 100,
+        lowStockThreshold: 10,
       });
 
       await inventoryService.updateInventoryItem("5", {

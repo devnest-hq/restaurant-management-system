@@ -8,14 +8,30 @@ jest.mock("../../config/cloudinary", () => ({
   },
 }));
 
+jest.mock("../../utils/cache", () => ({
+  getCache: jest.fn(),
+  setCache: jest.fn(),
+  deleteCachePattern: jest.fn(),
+}));
+
 const prismaMock = require("../../prisma/client.mock");
 const cloudinary = require("../../config/cloudinary");
+const {
+  getCache,
+  setCache,
+  deleteCachePattern,
+} = require("../../utils/cache");
 const menuService = require("../../services/menu.service");
-
 
 describe("menu.service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Cache misses by default so database behavior can be tested.
+    getCache.mockResolvedValue(null);
+    setCache.mockResolvedValue(undefined);
+    deleteCachePattern.mockResolvedValue(undefined);
+
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -28,35 +44,35 @@ describe("menu.service", () => {
   // =========================================================
 
   describe("createMenuItem", () => {
-    it("rejects when name is missing", () => {
-      expect(() =>
+    it("rejects when name is missing", async () => {
+      await expect(
         menuService.createMenuItem({
           category: "Stew",
           price: 1000,
         })
-      ).toThrow("All fields are required");
+      ).rejects.toThrow("All fields are required");
 
       expect(prismaMock.menuItem.create).not.toHaveBeenCalled();
     });
 
-    it("rejects when category is missing", () => {
-      expect(() =>
+    it("rejects when category is missing", async () => {
+      await expect(
         menuService.createMenuItem({
           name: "Tomato Stew",
           price: 1000,
         })
-      ).toThrow("All fields are required");
+      ).rejects.toThrow("All fields are required");
 
       expect(prismaMock.menuItem.create).not.toHaveBeenCalled();
     });
 
-    it("rejects when price is missing", () => {
-      expect(() =>
+    it("rejects when price is missing", async () => {
+      await expect(
         menuService.createMenuItem({
           name: "Tomato Stew",
           category: "Stew",
         })
-      ).toThrow("All fields are required");
+      ).rejects.toThrow("All fields are required");
 
       expect(prismaMock.menuItem.create).not.toHaveBeenCalled();
     });
@@ -93,6 +109,7 @@ describe("menu.service", () => {
         },
       });
 
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
       expect(result).toEqual(menuItem);
     });
 
@@ -126,7 +143,24 @@ describe("menu.service", () => {
         },
       });
 
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
       expect(result.name).toBe("Chicken Burger");
+    });
+
+    it("propagates database errors", async () => {
+      prismaMock.menuItem.create.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        menuService.createMenuItem({
+          name: "Tomato Stew",
+          category: "Stew",
+          price: 1000,
+        })
+      ).rejects.toThrow("Database error");
+
+      expect(deleteCachePattern).not.toHaveBeenCalled();
     });
   });
 
@@ -145,6 +179,7 @@ describe("menu.service", () => {
       ).rejects.toThrow("Menu item not found");
 
       expect(prismaMock.menuItem.update).not.toHaveBeenCalled();
+      expect(deleteCachePattern).not.toHaveBeenCalled();
     });
 
     it("updates a menu item successfully", async () => {
@@ -188,6 +223,7 @@ describe("menu.service", () => {
         },
       });
 
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
       expect(result).toEqual(updatedItem);
     });
 
@@ -225,6 +261,8 @@ describe("menu.service", () => {
       expect(cloudinary.uploader.destroy).toHaveBeenCalledWith(
         "restaurant/old-image"
       );
+
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
     });
 
     it("does not delete an image when no new image is provided", async () => {
@@ -248,6 +286,7 @@ describe("menu.service", () => {
       });
 
       expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
     });
 
     it("does not fail the update if Cloudinary image deletion fails", async () => {
@@ -282,6 +321,7 @@ describe("menu.service", () => {
       });
 
       expect(result).toEqual(updatedItem);
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
     });
 
     it("handles Prisma P2025 error during update", async () => {
@@ -303,6 +343,30 @@ describe("menu.service", () => {
           name: "Updated Stew",
         })
       ).rejects.toThrow("Menu item not found");
+
+      expect(deleteCachePattern).not.toHaveBeenCalled();
+    });
+
+    it("propagates non-P2025 update errors", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Tomato Stew",
+        imagePublicId: null,
+      };
+
+      prismaMock.menuItem.findUnique.mockResolvedValue(existingItem);
+
+      prismaMock.menuItem.update.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        menuService.updateMenuItem(1, {
+          name: "Updated Stew",
+        })
+      ).rejects.toThrow("Database error");
+
+      expect(deleteCachePattern).not.toHaveBeenCalled();
     });
   });
 
@@ -329,15 +393,82 @@ describe("menu.service", () => {
         },
       ];
 
+      getCache.mockResolvedValue(null);
       prismaMock.menuItem.findMany.mockResolvedValue(menuItems);
 
       const result = await menuService.getAllMenuItems();
+
+      expect(getCache).toHaveBeenCalledWith("menu:list:all:all");
 
       expect(prismaMock.menuItem.findMany).toHaveBeenCalledWith({
         where: {},
       });
 
+      expect(setCache).toHaveBeenCalledWith(
+        "menu:list:all:all",
+        menuItems,
+        300
+      );
+
       expect(result).toEqual(menuItems);
+    });
+
+    it("returns cached menu items without querying the database", async () => {
+      const cachedItems = [
+        {
+          id: 1,
+          name: "Cached Tomato Stew",
+          category: "Stew",
+          price: 1000,
+          available: true,
+        },
+      ];
+
+      getCache.mockResolvedValue(cachedItems);
+
+      const result = await menuService.getAllMenuItems();
+
+      expect(getCache).toHaveBeenCalledWith("menu:list:all:all");
+      expect(prismaMock.menuItem.findMany).not.toHaveBeenCalled();
+      expect(setCache).not.toHaveBeenCalled();
+
+      expect(result).toEqual(cachedItems);
+    });
+
+    it("uses the correct cache key for category filtering", async () => {
+      prismaMock.menuItem.findMany.mockResolvedValue([]);
+
+      await menuService.getAllMenuItems({
+        category: "Stew",
+      });
+
+      expect(getCache).toHaveBeenCalledWith(
+        "menu:list:Stew:all"
+      );
+
+      expect(setCache).toHaveBeenCalledWith(
+        "menu:list:Stew:all",
+        [],
+        300
+      );
+    });
+
+    it("uses the correct cache key for availability filtering", async () => {
+      prismaMock.menuItem.findMany.mockResolvedValue([]);
+
+      await menuService.getAllMenuItems({
+        available: "true",
+      });
+
+      expect(getCache).toHaveBeenCalledWith(
+        "menu:list:all:true"
+      );
+
+      expect(setCache).toHaveBeenCalledWith(
+        "menu:list:all:true",
+        [],
+        300
+      );
     });
 
     it("filters menu items by category", async () => {
@@ -417,6 +548,80 @@ describe("menu.service", () => {
 
       expect(result).toEqual([]);
     });
+
+    it("does not query the database when cached data is available", async () => {
+      const cachedItems = [
+        {
+          id: 1,
+          name: "Chicken Burger",
+          category: "Burger",
+          price: 2500,
+          available: true,
+        },
+      ];
+
+      getCache.mockResolvedValue(cachedItems);
+
+      const result = await menuService.getAllMenuItems({
+        category: "Burger",
+        available: "true",
+      });
+
+      expect(getCache).toHaveBeenCalledWith(
+        "menu:list:Burger:true"
+      );
+
+      expect(prismaMock.menuItem.findMany).not.toHaveBeenCalled();
+
+      expect(setCache).not.toHaveBeenCalled();
+
+      expect(result).toEqual(cachedItems);
+    });
+
+    it("propagates database errors", async () => {
+      prismaMock.menuItem.findMany.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        menuService.getAllMenuItems()
+      ).rejects.toThrow("Database error");
+
+      expect(setCache).not.toHaveBeenCalled();
+    });
+
+    it("propagates cache errors before querying the database", async () => {
+      getCache.mockRejectedValue(new Error("Cache error"));
+
+      await expect(
+        menuService.getAllMenuItems()
+      ).rejects.toThrow("Cache error");
+
+      expect(prismaMock.menuItem.findMany).not.toHaveBeenCalled();
+    });
+
+    it("propagates cache set errors after fetching menu items", async () => {
+      const menuItems = [
+        {
+          id: 1,
+          name: "Tomato Stew",
+          category: "Stew",
+          price: 1000,
+          available: true,
+        },
+      ];
+
+      prismaMock.menuItem.findMany.mockResolvedValue(menuItems);
+      setCache.mockRejectedValue(new Error("Cache set failed"));
+
+      await expect(
+        menuService.getAllMenuItems()
+      ).rejects.toThrow("Cache set failed");
+
+      expect(prismaMock.menuItem.findMany).toHaveBeenCalledWith({
+        where: {},
+      });
+    });
   });
 
   // =========================================================
@@ -446,12 +651,42 @@ describe("menu.service", () => {
       expect(result).toEqual(menuItem);
     });
 
+    it("parses the menu item ID into an integer", async () => {
+      const menuItem = {
+        id: 1,
+        name: "Tomato Stew",
+        category: "Stew",
+        price: 1000,
+        available: true,
+      };
+
+      prismaMock.menuItem.findUnique.mockResolvedValue(menuItem);
+
+      await menuService.getMenuItemById("1");
+
+      expect(prismaMock.menuItem.findUnique).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+        },
+      });
+    });
+
     it("throws when menu item does not exist", async () => {
       prismaMock.menuItem.findUnique.mockResolvedValue(null);
 
       await expect(
         menuService.getMenuItemById(99)
       ).rejects.toThrow("Menu item not found");
+    });
+
+    it("propagates database errors", async () => {
+      prismaMock.menuItem.findUnique.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        menuService.getMenuItemById(1)
+      ).rejects.toThrow("Database error");
     });
   });
 
@@ -478,6 +713,7 @@ describe("menu.service", () => {
         },
       });
 
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
       expect(result).toEqual(existingItem);
     });
 
@@ -490,6 +726,7 @@ describe("menu.service", () => {
 
       prismaMock.menuItem.findUnique.mockResolvedValue(existingItem);
       prismaMock.menuItem.delete.mockResolvedValue(existingItem);
+
       cloudinary.uploader.destroy.mockResolvedValue({
         result: "ok",
       });
@@ -505,6 +742,8 @@ describe("menu.service", () => {
           id: 1,
         },
       });
+
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
     });
 
     it("does not call Cloudinary when the menu item has no image", async () => {
@@ -520,6 +759,39 @@ describe("menu.service", () => {
       await menuService.deleteMenuItem(1);
 
       expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
+    });
+
+    it("does not fail deletion if Cloudinary image deletion fails", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Tomato Stew",
+        imagePublicId: "restaurant/tomato-stew",
+      };
+
+      prismaMock.menuItem.findUnique.mockResolvedValue(existingItem);
+      prismaMock.menuItem.delete.mockResolvedValue(existingItem);
+
+      cloudinary.uploader.destroy.mockRejectedValue(
+        new Error("Cloudinary error")
+      );
+
+      const result = await menuService.deleteMenuItem(1);
+
+      expect(result).toEqual(existingItem);
+      expect(prismaMock.menuItem.delete).toHaveBeenCalled();
+      expect(deleteCachePattern).toHaveBeenCalledWith("menu:*");
+    });
+
+    it("throws when menu item does not exist", async () => {
+      prismaMock.menuItem.findUnique.mockResolvedValue(null);
+
+      await expect(
+        menuService.deleteMenuItem(99)
+      ).rejects.toThrow("Menu item not found");
+
+      expect(prismaMock.menuItem.delete).not.toHaveBeenCalled();
+      expect(deleteCachePattern).not.toHaveBeenCalled();
     });
 
     it("handles Prisma P2025 error during deletion", async () => {
@@ -539,6 +811,53 @@ describe("menu.service", () => {
       await expect(
         menuService.deleteMenuItem(1)
       ).rejects.toThrow("Menu item not found");
+
+      expect(deleteCachePattern).not.toHaveBeenCalled();
+    });
+
+    it("propagates non-P2025 deletion errors", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Tomato Stew",
+        imagePublicId: null,
+      };
+
+      prismaMock.menuItem.findUnique.mockResolvedValue(existingItem);
+
+      prismaMock.menuItem.delete.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await expect(
+        menuService.deleteMenuItem(1)
+      ).rejects.toThrow("Database error");
+
+      expect(deleteCachePattern).not.toHaveBeenCalled();
+    });
+
+    it("parses the menu item ID into an integer", async () => {
+      const existingItem = {
+        id: 1,
+        name: "Tomato Stew",
+        imagePublicId: null,
+      };
+
+      prismaMock.menuItem.findUnique.mockResolvedValue(existingItem);
+      prismaMock.menuItem.delete.mockResolvedValue(existingItem);
+
+      await menuService.deleteMenuItem("1");
+
+      expect(prismaMock.menuItem.findUnique).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+        },
+      });
+
+      expect(prismaMock.menuItem.delete).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+        },
+      });
     });
   });
 });
