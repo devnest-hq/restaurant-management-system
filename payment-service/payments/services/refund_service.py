@@ -4,14 +4,16 @@ import razorpay
 from django.conf import settings
 from django.utils import timezone
 
-from ..models import Payment
+from ..models import Payment, Refund
 from ..utils import notify_node_backend, log_payment_event
 
 logger = logging.getLogger('payments')
 
 
 class RefundService:
-    def process_refund(self, payment, refund_amount=None):
+    """Handles refund operations for Stripe and Razorpay."""
+
+    def process_refund(self, payment, refund_amount=None, reason=None):
         """
         Process a refund for the given payment.
         If refund_amount is None, full refund is processed.
@@ -19,12 +21,59 @@ class RefundService:
         """
         amount_to_refund = refund_amount if refund_amount else payment.amount
 
-        if payment.method == Payment.PaymentMethod.STRIPE:
-            return self._refund_stripe(payment, amount_to_refund)
-        elif payment.method == Payment.PaymentMethod.RAZORPAY:
-            return self._refund_razorpay(payment, amount_to_refund)
-        else:
-            raise ValueError(f"Unsupported payment method: {payment.method}")
+        # Create refund record
+        refund = Refund.objects.create(
+            payment=payment,
+            refund_amount=amount_to_refund,
+            currency=payment.currency,
+            status=Refund.RefundStatus.PROCESSING,
+            reason=reason,
+        )
+
+        try:
+            if payment.method == Payment.PaymentMethod.STRIPE:
+                refund_data = self._refund_stripe(payment, amount_to_refund)
+            elif payment.method == Payment.PaymentMethod.RAZORPAY:
+                refund_data = self._refund_razorpay(payment, amount_to_refund)
+            else:
+                raise ValueError(f"Unsupported payment method: {payment.method}")
+
+            # Update refund record on success
+            refund.gateway_refund_id = refund_data['refund_id']
+            refund.status = Refund.RefundStatus.COMPLETED
+            refund.save()
+
+            # Update payment record
+            if amount_to_refund < payment.amount:
+                payment.status = Payment.PaymentStatus.PARTIALLY_REFUNDED
+            else:
+                payment.status = Payment.PaymentStatus.REFUNDED
+
+            payment.refund_id = refund_data['refund_id']
+            payment.refund_amount = amount_to_refund
+            payment.save()
+
+            log_payment_event(
+                payment,
+                'REFUND_PROCESSED',
+                {
+                    'order_id': payment.order_id,
+                    'refund_id': refund_data['refund_id'],
+                    'refund_amount': str(amount_to_refund),
+                    'status': payment.status,
+                }
+            )
+
+            return refund_data
+
+        except Exception as e:
+            # Mark refund as failed
+            refund.status = Refund.RefundStatus.FAILED
+            refund.error_message = str(e)
+            refund.save()
+
+            logger.error(f"Refund failed for order {payment.order_id}: {str(e)}")
+            raise
 
     def _refund_stripe(self, payment, amount_to_refund):
         """Process refund via Stripe."""

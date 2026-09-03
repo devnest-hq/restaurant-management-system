@@ -3,6 +3,7 @@ from django.utils import timezone
 from ..models import Payment
 from ..utils import log_payment_event
 from .notification_service import NotificationService
+from ..models import Refund, Payment
 
 logger = logging.getLogger('payments')
 
@@ -121,124 +122,72 @@ class WebhookService:
             logger.error(f"Error processing failure webhook: {str(e)}")
             raise
 
-    def _handle_refund(self, event_data):
-        """Handle refund event from gateway."""
-        order_id = event_data.get('order_id')
-        refund_id = event_data.get('refund_id')
-        refund_amount = event_data.get('refund_amount')
+def _handle_refund(self, event_data):
+    """Handle refund event from gateway."""
+    order_id = event_data.get('order_id')
+    refund_id = event_data.get('refund_id')
+    refund_amount = event_data.get('refund_amount')
 
-        try:
-            payment = Payment.objects.get(order_id=order_id)
+    try:
+        payment = Payment.objects.get(order_id=order_id)
 
-            payment.refund_id = refund_id
-            if refund_amount:
-                payment.refund_amount = refund_amount
-                if refund_amount < payment.amount:
-                    payment.status = Payment.PaymentStatus.PARTIALLY_REFUNDED
-                else:
-                    payment.status = Payment.PaymentStatus.REFUNDED
+        # Find or create refund record
+        refund, created = Refund.objects.get_or_create(
+            payment=payment,
+            gateway_refund_id=refund_id,
+            defaults={
+                'refund_amount': refund_amount if refund_amount else payment.amount,
+                'currency': payment.currency,
+                'status': Refund.RefundStatus.COMPLETED,
+                'webhook_received_at': timezone.now(),
+            }
+        )
+
+        if not created:
+            refund.status = Refund.RefundStatus.COMPLETED
+            refund.webhook_received_at = timezone.now()
+            refund.save()
+
+        # Update payment status
+        payment.refund_id = refund_id
+        if refund_amount:
+            payment.refund_amount = refund_amount
+            if refund_amount < payment.amount:
+                payment.status = Payment.PaymentStatus.PARTIALLY_REFUNDED
             else:
                 payment.status = Payment.PaymentStatus.REFUNDED
+        else:
+            payment.status = Payment.PaymentStatus.REFUNDED
 
-            payment.save()
+        payment.save()
 
-            log_payment_event(
-                payment,
-                'REFUND_WEBHOOK_RECEIVED',
-                {
-                    'order_id': order_id,
-                    'refund_id': refund_id,
-                    'status': payment.status,
-                }
-            )
+        log_payment_event(
+            payment,
+            'REFUND_WEBHOOK_RECEIVED',
+            {
+                'order_id': order_id,
+                'refund_id': refund_id,
+                'status': payment.status,
+            }
+        )
 
-            # Notify Node.js backend
-            notified = self.notification_service.notify_payment_status(
-                order_id=order_id,
-                payment_status=payment.status,
-                payment_data={
-                    'refund_id': refund_id,
-                    'refund_amount': str(payment.refund_amount) if payment.refund_amount else None,
-                }
-            )
-            payment.node_notified_at = timezone.now() if notified else None
-            payment.save()
+        # Notify Node.js backend
+        notified = self.notification_service.notify_payment_status(
+            order_id=order_id,
+            payment_status=payment.status,
+            payment_data={
+                'refund_id': refund_id,
+                'refund_amount': str(payment.refund_amount) if payment.refund_amount else None,
+            }
+        )
+        payment.node_notified_at = timezone.now() if notified else None
+        payment.save()
 
-            return {'success': True, 'message': f'Refund processed for order {order_id}.'}
+        return {'success': True, 'message': f'Refund processed for order {order_id}.'}
 
-        except Payment.DoesNotExist:
-            logger.warning(f"No payment found for order {order_id} during refund webhook")
-            return {'success': False, 'message': 'Payment not found.'}
-        except Exception as e:
-            logger.error(f"Error processing refund webhook: {str(e)}")
-            raise
-
-    def _handle_refund_failure(self, event_data):
-        """Handle failed refund event from gateway."""
-        order_id = event_data.get('order_id')
-
-        try:
-            payment = Payment.objects.get(order_id=order_id)
-
-            log_payment_event(
-                payment,
-                'REFUND_FAILED',
-                {
-                    'order_id': order_id,
-                    'message': 'Refund failed at gateway',
-                }
-            )
-
-            # Notify Node.js backend about refund failure
-            notified = self.notification_service.notify_payment_status(
-                order_id=order_id,
-                payment_status='REFUND_FAILED',
-                payment_data={}
-            )
-            payment.node_notified_at = timezone.now() if notified else None
-            payment.save()
-
-            return {'success': True, 'message': f'Refund failure recorded for order {order_id}.'}
-
-        except Payment.DoesNotExist:
-            logger.warning(f"No payment found for order {order_id} during refund failure webhook")
-            return {'success': False, 'message': 'Payment not found.'}
-        except Exception as e:
-            logger.error(f"Error processing refund failure webhook: {str(e)}")
-            raise
-
-    def _handle_dispute(self, event_data):
-        """Handle dispute/chargeback event from gateway."""
-        order_id = event_data.get('order_id')
-        dispute_id = event_data.get('dispute_id')
-
-        try:
-            payment = Payment.objects.get(order_id=order_id)
-
-            log_payment_event(
-                payment,
-                'DISPUTE_CREATED',
-                {
-                    'order_id': order_id,
-                    'dispute_id': dispute_id,
-                    'message': 'Dispute/chargeback created',
-                }
-            )
-
-            # Notify Node.js backend about dispute
-            notified = self.notification_service.notify_payment_status(
-                order_id=order_id,
-                payment_status='DISPUTED',
-                payment_data={'dispute_id': dispute_id}
-            )
-            payment.node_notified_at = timezone.now() if notified else None
-            payment.save()
-
-            return {'success': True, 'message': f'Dispute recorded for order {order_id}.'}
-
-        except Payment.DoesNotExist:
-            logger.warning(f"No payment found for order {order_id} during dispute webhook")
-            return {'success': False, 'message': 'Payment not found.'}
-        except Exception as e:
-            logger.error(f"Error processing dispute webhook: {str(e)}")
-            raise
+    except Payment.DoesNotExist:
+        logger.warning(f"No payment found for order {order_id} during refund webhook")
+        return {'success': False, 'message': 'Payment not found.'}
+    except Exception as e:
+        logger.error(f"Error processing refund webhook: {str(e)}")
+        raise

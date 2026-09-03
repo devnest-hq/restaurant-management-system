@@ -10,6 +10,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 
 # Database
 db.sqlite3
@@ -25,3 +26,7 @@ media/
 # OS
 .DS_Store
 Thumbs.db
+
+coverage.xml/ .coverage
+
+*.log
