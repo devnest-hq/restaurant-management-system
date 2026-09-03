@@ -58,3 +58,40 @@ class Payment(TimeStampedModel):
 
     def __str__(self):
         return f"Payment {self.id} - {self.order_id} - {self.status}"
+
+class Refund(TimeStampedModel):
+    """Tracks refunds associated with payments."""
+
+    class RefundStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        PROCESSING = 'PROCESSING', 'Processing'
+        COMPLETED = 'COMPLETED', 'Completed'
+        FAILED = 'FAILED', 'Failed'
+
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name='refunds',
+    )
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+    gateway_refund_id = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=RefundStatus.choices,
+        default=RefundStatus.PENDING,
+    )
+    reason = models.TextField(blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+    webhook_received_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['payment']),
+            models.Index(fields=['status']),
+            models.Index(fields=['gateway_refund_id']),
+        ]
+
+    def __str__(self):
+        return f"Refund {self.id} - {self.payment.order_id} - {self.status}"

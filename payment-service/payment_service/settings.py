@@ -221,3 +221,7 @@ LOGGING = {
         },
     },
 }
+
+#Load production settings if DEPLOYMENT_ENV=production
+if os.getenv('DEPLOYMENT_ENV') == 'production':
+    from .production_settings import *
