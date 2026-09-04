@@ -57,6 +57,9 @@ model Order {
   invoices   Invoice[]
   customer   User        @relation(fields: [customerId], references: [id])
   items      OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
 }
 
 model OrderItem {
@@ -67,6 +70,9 @@ model OrderItem {
   menuItemId Int
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
   order      Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([menuItemId])
 }
 
 model Table {
@@ -89,6 +95,7 @@ model Reservation {
   table      Table             @relation(fields: [tableId], references: [id])
 
   @@unique([tableId, date, timeSlot])
+  @@index([customerId])
 }
 
 model Notification {
@@ -99,6 +106,8 @@ model Notification {
   createdAt DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model InventoryItem {
@@ -122,6 +131,8 @@ model Invoice {
   createdAt     DateTime @default(now())
   orderId       Int
   order         Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
 }
 
 model RefreshToken {
