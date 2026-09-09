@@ -83,6 +83,54 @@ prisma.order.findMany({
   orderBy: { createdAt: "desc" },
 });
 
+exports.cancelOrder = async (orderId, customerId) => {
+  const id = parseInt(orderId);
+
+  const order = await prisma.order.findUnique({ where: { id } });
+
+  if (!order) {
+    const err = new Error("Order not found");
+    err.status = 404;
+    throw err;
+  }
+
+  if (order.customerId !== customerId) {
+    const err = new Error("Access denied");
+    err.status = 403;
+    throw err;
+  }
+
+  if (order.status !== "PENDING") {
+    const err = new Error("Order can no longer be cancelled — it is already being prepared");
+    err.status = 400;
+    throw err;
+  }
+
+  const CancelledOrder = await prisma.order.update({
+    where: { id },
+    data: { status: "CANCELLED" },
+    include: {
+      items: { include: { menuItem: true } },
+    },
+  });
+
+  await notifyRoles(
+    ["ADMIN", "CHEF"],
+    {
+      type: "ORDER_CANCELLED",
+      message: `An order ${order.id} has been cancelled. Total: $${order.totalPrice.toFixed(2)}.`,
+    }
+  );
+  
+  await createNotification({
+    userId: customerId,
+    type: "ORDER_CANCELLED",
+    message: `Your order ${order.id} has been cancelled.`,
+  });
+
+  return CancelledOrder;
+};
+
 exports.updateOrderStatus = async (id, status) => {
   const orderId = parseInt(id);
 

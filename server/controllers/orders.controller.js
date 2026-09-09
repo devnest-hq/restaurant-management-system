@@ -57,6 +57,19 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await orderService.cancelOrder(req.params.id, req.user.userId);
+
+    const io = req.app.get("io");
+    if (io) io.emit("order-status-updated", order);
+
+    res.status(200).json(order);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't cancel order") });
+  }
+};
+
 exports.getKitchenOrders = async (req, res) => {
   try {
     const orders = await orderService.getKitchenOrders();
