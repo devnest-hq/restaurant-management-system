@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "multer-storage-cloudinary-v2": "^1.0.3",
+    "node-cron": "^4.6.0",
     "pg": "^8.23.0",
     "rate-limit-redis": "^6.0.1",
     "redis": "^6.2.1",
