@@ -1,0 +1,1138 @@
+/* =========================================================
+   KITCHSYNC CUSTOMER CHECKOUT
+   STYLE.CSS
+   Mockup-inspired restaurant app design
+========================================================= */
+
+
+/* =========================================================
+   FONT
+========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #fffdf7;
+    color: #3b2222;
+    line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    font-family: 'Poppins', sans-serif;
+}
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+:root {
+    --primary: #f9df78;
+    --primary-dark: #e7c85b;
+    --primary-light: #fff6cf;
+
+    --text: #3b2222;
+    --text-light: #654848;
+    --muted: #817777;
+
+    --white: #ffffff;
+    --background: #fffdf7;
+
+    --border: #f0e5d5;
+
+    --green: #62a66f;
+    --green-light: #eef8ed;
+
+    --red: #e85b43;
+
+    --max-width: 1180px;
+}
+
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.navbar {
+    width: 100%;
+    min-height: 72px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #f0e8dc;
+
+    display: flex;
+    align-items: center;
+
+    position: sticky;
+    top: 0;
+
+    z-index: 1000;
+}
+
+.navbar-container {
+    width: min(100% - 40px, var(--max-width));
+
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    color: #3b2222;
+
+    text-decoration: none;
+
+    font-size: 25px;
+    font-weight: 800;
+
+    letter-spacing: -0.8px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+
+    gap: 30px;
+}
+
+.nav-links a {
+    color: #776969;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition: all 0.25s ease;
+}
+
+.nav-links a:hover {
+    color: #b99b2f;
+}
+
+/* Do not force the last navigation link to be active */
+.nav-links a:last-child {
+    color: #776969;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.checkout-hero {
+    background: #fff3c7;
+
+    padding: 60px 20px;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.hero-content {
+    width: min(100%, var(--max-width));
+
+    margin: 0 auto;
+
+    text-align: center;
+
+    position: relative;
+
+    z-index: 2;
+}
+
+.eyebrow {
+    color: #a98d29;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+
+    text-transform: uppercase;
+}
+
+.hero-content h1 {
+    color: #3b2222;
+
+    font-size: 42px;
+
+    font-weight: 700;
+
+    line-height: 1.15;
+
+    letter-spacing: -1.2px;
+
+    margin-bottom: 12px;
+}
+
+.hero-content > p:last-child {
+    color: #756868;
+
+    font-size: 14px;
+
+    font-weight: 400;
+
+    max-width: 600px;
+
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   CHECKOUT SECTION
+========================================================= */
+
+.checkout-section {
+    padding: 50px 20px 80px;
+}
+
+.checkout-container {
+    width: min(100%, var(--max-width));
+
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.05fr)
+        minmax(0, 1fr);
+
+    gap: 30px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.checkout-card {
+    background: #ffffff;
+
+    border: none;
+
+    border-radius: 22px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 6px 25px rgba(60, 30, 20, 0.055);
+}
+
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+.section-heading {
+    margin-bottom: 25px;
+}
+
+.section-heading h2 {
+    color: #3b2222;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    margin-bottom: 6px;
+}
+
+.section-heading p {
+    color: #817777;
+
+    font-size: 12px;
+
+    font-weight: 400;
+}
+
+
+/* =========================================================
+   ORDER ITEMS
+========================================================= */
+
+.order-items {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0;
+}
+
+.order-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 17px;
+
+    padding: 18px 0;
+
+    border-bottom: 1px solid #f1e8dc;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   FOOD IMAGE
+========================================================= */
+
+.item-image {
+    width: 100px;
+    height: 100px;
+
+    flex-shrink: 0;
+
+    border-radius: 18px;
+
+    object-fit: cover;
+
+    background: var(--primary-light);
+
+    display: block;
+
+    box-shadow:
+        0 5px 15px rgba(60, 30, 20, 0.08);
+}
+
+
+/* =========================================================
+   ITEM DETAILS
+========================================================= */
+
+.item-details {
+    flex: 1;
+
+    min-width: 0;
+}
+
+.item-details h3 {
+    color: #3b2222;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    margin-bottom: 5px;
+}
+
+.item-details p {
+    color: #786868;
+
+    font-size: 11px;
+
+    font-weight: 400;
+
+    margin-bottom: 4px;
+}
+
+.item-details span {
+    color: #b59a35;
+
+    font-size: 11px;
+
+    font-weight: 600;
+}
+
+.order-item > strong {
+    color: #3b2222;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   PRICE SUMMARY
+========================================================= */
+
+.price-summary {
+    padding-top: 22px;
+
+    border-top: 1px solid #eee5da;
+
+    margin-top: 8px;
+}
+
+.price-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 9px 0;
+}
+
+.price-row span {
+    color: #817777;
+
+    font-size: 12px;
+
+    font-weight: 400;
+}
+
+.price-row strong {
+    color: #3b2222;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+.total-row {
+    border-top: 1px solid #eee5da;
+
+    margin-top: 10px;
+
+    padding-top: 18px;
+}
+
+.total-row span,
+.total-row strong {
+    color: #3b2222;
+
+    font-size: 17px;
+
+    font-weight: 700;
+}
+
+.total-row strong {
+    color: #b19325;
+
+    font-size: 20px;
+
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    color: #4e3b3b;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+.form-group label span {
+    color: #817777;
+
+    font-weight: 400;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+
+    border: 1px solid #eadfce;
+
+    border-radius: 14px;
+
+    background: #fffefa;
+
+    color: #3b2222;
+
+    padding: 12px 15px;
+
+    font-size: 12px;
+
+    font-weight: 400;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.form-group input,
+.form-group select {
+    height: 47px;
+}
+
+.form-group textarea {
+    resize: vertical;
+
+    min-height: 100px;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #aaa09a;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #e6ca55;
+
+    background: #fffdf5;
+
+    box-shadow:
+        0 0 0 3px rgba(249, 223, 120, 0.25);
+}
+
+
+/* =========================================================
+   TWO-COLUMN FORM ROW
+========================================================= */
+
+.form-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 15px;
+}
+
+
+/* =========================================================
+   PAYMENT METHOD
+========================================================= */
+
+.card-payment-fields {
+    display: block;
+}
+
+
+/* =========================================================
+   PAYMENT NOTICE
+========================================================= */
+
+.payment-notice {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    padding: 14px;
+
+    margin: 7px 0 20px;
+
+    background: #fff8dc;
+
+    border: 1px solid #f2e2a9;
+
+    border-radius: 14px;
+}
+
+.notice-icon {
+    width: 24px;
+    height: 24px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #f9df78;
+
+    color: #3b2222;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.payment-notice strong {
+    display: block;
+
+    color: #9a8127;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    margin-bottom: 3px;
+}
+
+.payment-notice p {
+    color: #776b5b;
+
+    font-size: 10px;
+
+    font-weight: 400;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+========================================================= */
+
+.primary-button {
+    width: 100%;
+
+    height: 52px;
+
+    border: none;
+
+    border-radius: 26px;
+
+    background: #f9df78;
+
+    color: #3b2222;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.primary-button:hover {
+    background: #e7c85b;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(180, 145, 40, 0.18);
+}
+
+.primary-button:active {
+    transform: translateY(0);
+
+    box-shadow: none;
+}
+
+.primary-button:disabled {
+    opacity: 0.7;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   CONFIRMATION
+========================================================= */
+
+.confirmation-message {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    margin-top: 20px;
+
+    padding: 16px;
+
+    border-radius: 14px;
+
+    background: #eef8ed;
+
+    border: 1px solid #d4ead3;
+}
+
+.success-icon {
+    width: 30px;
+    height: 30px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #62a66f;
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.confirmation-message strong {
+    display: block;
+
+    color: #57945f;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    margin-bottom: 4px;
+}
+
+.confirmation-message p {
+    color: #56805c;
+
+    font-size: 10px;
+
+    font-weight: 400;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+    background: #ffffff;
+
+    border-top: 1px solid #eee5da;
+
+    padding: 28px 20px;
+}
+
+.footer-container {
+    width: min(100%, var(--max-width));
+
+    margin: 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.footer strong {
+    color: #3b2222;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.footer p {
+    color: #817777;
+
+    font-size: 10px;
+
+    font-weight: 400;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .checkout-container {
+        grid-template-columns: 1fr;
+
+        gap: 25px;
+    }
+
+    .order-summary {
+        order: 0;
+    }
+
+    .payment-card {
+        order: 1;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    /* NAVBAR */
+
+    .navbar {
+        min-height: auto;
+
+        padding: 17px 0;
+    }
+
+    .navbar-container {
+        flex-direction: column;
+
+        gap: 14px;
+    }
+
+    .logo {
+        font-size: 23px;
+    }
+
+    .nav-links {
+        justify-content: center;
+
+        flex-wrap: wrap;
+
+        gap: 13px;
+    }
+
+    .nav-links a {
+        font-size: 10px;
+    }
+
+
+    /* HERO */
+
+    .checkout-hero {
+        padding: 45px 18px;
+    }
+
+    .eyebrow {
+        font-size: 10px;
+
+        letter-spacing: 1.6px;
+    }
+
+    .hero-content h1 {
+        font-size: 31px;
+
+        letter-spacing: -0.8px;
+    }
+
+    .hero-content > p:last-child {
+        font-size: 11px;
+
+        line-height: 1.7;
+    }
+
+
+    /* CHECKOUT */
+
+    .checkout-section {
+        padding: 25px 15px 50px;
+    }
+
+    .checkout-card {
+        padding: 21px 18px;
+
+        border-radius: 20px;
+    }
+
+    .section-heading {
+        margin-bottom: 20px;
+    }
+
+    .section-heading h2 {
+        font-size: 18px;
+    }
+
+
+    /* FOOD ITEMS */
+
+    .order-item {
+        gap: 12px;
+
+        padding: 15px 0;
+    }
+
+    .item-image {
+        width: 82px;
+        height: 82px;
+
+        border-radius: 16px;
+    }
+
+    .item-details h3 {
+        font-size: 13px;
+    }
+
+    .item-details p,
+    .item-details span {
+        font-size: 10px;
+    }
+
+    .order-item > strong {
+        font-size: 12px;
+    }
+
+
+    /* FORM */
+
+    .form-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 46px;
+    }
+
+
+    /* TOTAL */
+
+    .total-row span,
+    .total-row strong {
+        font-size: 15px;
+    }
+
+    .total-row strong {
+        font-size: 18px;
+    }
+
+
+    /* BUTTON */
+
+    .primary-button {
+        height: 50px;
+
+        font-size: 13px;
+    }
+
+
+    /* FOOTER */
+
+    .footer-container {
+        flex-direction: column;
+
+        text-align: center;
+
+        gap: 8px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .checkout-card {
+        padding: 17px 14px;
+    }
+
+    .nav-links {
+        gap: 9px;
+    }
+
+    .nav-links a {
+        font-size: 9px;
+    }
+
+    .hero-content h1 {
+        font-size: 28px;
+    }
+
+    .item-image {
+        width: 72px;
+        height: 72px;
+
+        border-radius: 14px;
+    }
+
+    .item-details h3 {
+        font-size: 12px;
+    }
+
+    .order-item > strong {
+        font-size: 11px;
+    }
+
+}
+/* =========================================================
+   FINAL MOCKUP POLISH
+========================================================= */
+
+/* Make the order card more compact */
+.order-summary .section-heading {
+    margin-bottom: 12px;
+}
+
+/* Improve food item layout */
+.order-item {
+    min-height: 120px;
+    padding: 18px 0;
+    gap: 18px;
+}
+
+/* Larger, cleaner food images */
+.item-image {
+    width: 105px;
+    height: 105px;
+    border-radius: 18px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Food name */
+.item-details h3 {
+    font-size: 15px;
+    line-height: 1.35;
+    color: #3b2222;
+}
+
+/* Quantity text */
+.item-details p {
+    font-size: 11px;
+    color: #806f6f;
+}
+
+/* Price per item */
+.item-details span {
+    color: #b2932c;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Item total */
+.order-item > strong {
+    color: #3b2222;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Price summary */
+.price-summary {
+    margin-top: 4px;
+    padding-top: 18px;
+}
+
+/* Make total stand out */
+.total-row {
+    padding-top: 17px;
+}
+
+.total-row strong {
+    color: #a98b24;
+}
+
+
+/* =========================================================
+   MOBILE FINAL POLISH
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .order-item {
+        min-height: 100px;
+        gap: 12px;
+        padding: 15px 0;
+    }
+
+    .item-image {
+        width: 82px;
+        height: 82px;
+        border-radius: 15px;
+    }
+
+    .item-details h3 {
+        font-size: 13px;
+    }
+
+    .item-details p {
+        font-size: 10px;
+    }
+
+    .item-details span {
+        font-size: 10px;
+    }
+
+    .order-item > strong {
+        font-size: 12px;
+    }
+}
+
+
+/* =========================================================
+   SMALL PHONE
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .order-item {
+        gap: 10px;
+    }
+
+    .item-image {
+        width: 72px;
+        height: 72px;
+        border-radius: 13px;
+    }
+
+    .item-details h3 {
+        font-size: 12px;
+    }
+
+    .item-details p,
+    .item-details span {
+        font-size: 9px;
+    }
+
+    .order-item > strong {
+        font-size: 11px;
+    }
+}
