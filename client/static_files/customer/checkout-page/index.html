@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Kitchsync customer checkout page"
+    >
+
+    <title>Kitchsync | Checkout</title>
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+
+<body>
+
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+
+    <header class="navbar">
+
+        <div class="navbar-container">
+
+            <a href="../landing/index.html" class="logo">
+                Kitchsync
+            </a>
+
+            <nav class="nav-links">
+
+                <a href="../menu/index.html">
+                    Menu
+                </a>
+
+                <a href="../reservation/index.html">
+                    Reservations
+                </a>
+
+                <a href="../cart/index.html">
+                    Cart
+                </a>
+
+                <a href="../login/index.html">
+                    Login
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         PAGE HERO
+    ========================== -->
+
+    <section class="checkout-hero">
+
+        <div class="hero-content">
+
+            <p class="eyebrow">
+                KITCHSYNC RESTAURANT
+            </p>
+
+            <h1>
+                Checkout
+            </h1>
+
+            <p>
+                Review your intercontinental dishes and complete your order.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         MAIN CHECKOUT
+    ========================== -->
+
+    <main class="checkout-section">
+
+        <div class="checkout-container">
+
+
+            <!-- =========================
+                 ORDER SUMMARY
+            ========================== -->
+
+            <section class="checkout-card order-summary">
+
+                <div class="section-heading">
+
+                    <h2>
+                        Your Order
+                    </h2>
+
+                    <p>
+                        Review your selected dishes before placing your order.
+                    </p>
+
+                </div>
+
+
+                <!-- Items will be inserted by JavaScript -->
+
+                <div
+                    class="order-items"
+                    id="orderItems"
+                >
+                </div>
+
+
+                <!-- =========================
+                     PRICE SUMMARY
+                ========================== -->
+
+                <div class="price-summary">
+
+                    <div class="price-row">
+
+                        <span>
+                            Subtotal
+                        </span>
+
+                        <strong id="subtotal">
+                            $0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="price-row">
+
+                        <span>
+                            Service Fee
+                        </span>
+
+                        <strong id="serviceFee">
+                            $0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="price-row total-row">
+
+                        <span>
+                            Total
+                        </span>
+
+                        <strong id="total">
+                            $0.00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =========================
+                 PAYMENT SECTION
+            ========================== -->
+
+            <section class="checkout-card payment-card">
+
+                <div class="section-heading">
+
+                    <h2>
+                        Payment Details
+                    </h2>
+
+                    <p>
+                        Enter your information to complete your order.
+                    </p>
+
+                </div>
+
+
+                <form id="checkoutForm">
+
+
+                    <!-- =========================
+                         CUSTOMER INFORMATION
+                    ========================== -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Customer Information
+                        </h3>
+
+
+                        <div class="form-group">
+
+                            <label for="customerName">
+                                Full Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customerName"
+                                name="customerName"
+                                placeholder="Enter your full name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label for="customerEmail">
+                                    Email Address
+                                </label>
+
+                                <input
+                                    type="email"
+                                    id="customerEmail"
+                                    name="customerEmail"
+                                    placeholder="you@example.com"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="customerPhone">
+                                    Phone Number
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="customerPhone"
+                                    name="customerPhone"
+                                    placeholder="Enter phone number"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =========================
+                         PAYMENT METHOD
+                    ========================== -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Payment Method
+                        </h3>
+
+
+                        <div class="form-group">
+
+                            <label for="paymentMethod">
+                                Choose Payment Method
+                            </label>
+
+                            <select
+                                id="paymentMethod"
+                                name="paymentMethod"
+                                required
+                            >
+
+                                <option value="">
+                                    Select payment method
+                                </option>
+
+                                <option value="card">
+                                    Credit / Debit Card
+                                </option>
+
+                                <option value="transfer">
+                                    Bank Transfer
+                                </option>
+
+                                <option value="cash">
+                                    Cash on Delivery
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+
+                        <!-- =========================
+                             CARD DETAILS
+                        ========================== -->
+
+                        <div
+                            id="cardPaymentFields"
+                            class="card-payment-fields"
+                            style="display: none;"
+                        >
+
+                            <div class="form-group">
+
+                                <label for="cardNumber">
+                                    Card Number
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="cardNumber"
+                                    name="cardNumber"
+                                    placeholder="1234 5678 9012 3456"
+                                    maxlength="19"
+                                >
+
+                            </div>
+
+
+                            <div class="form-row">
+
+                                <div class="form-group">
+
+                                    <label for="expiryDate">
+                                        Expiry Date
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="expiryDate"
+                                        name="expiryDate"
+                                        placeholder="MM/YY"
+                                        maxlength="5"
+                                    >
+
+                                </div>
+
+
+                                <div class="form-group">
+
+                                    <label for="cvv">
+                                        CVV
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="cvv"
+                                        name="cvv"
+                                        placeholder="123"
+                                        maxlength="4"
+                                    >
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =========================
+                         DELIVERY INFORMATION
+                    ========================== -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Delivery Information
+                        </h3>
+
+
+                        <div class="form-group">
+
+                            <label for="address">
+                                Delivery Address
+                            </label>
+
+                            <textarea
+                                id="address"
+                                name="address"
+                                rows="3"
+                                placeholder="Enter your delivery address"
+                                required
+                            ></textarea>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="orderNotes">
+                                Order Notes
+                            </label>
+
+                            <textarea
+                                id="orderNotes"
+                                name="orderNotes"
+                                rows="3"
+                                placeholder="Any special instructions? (Optional)"
+                            ></textarea>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =========================
+                         PAYMENT NOTICE
+                    ========================== -->
+
+                    <div class="payment-notice">
+
+                        <span class="notice-icon">
+                            🔒
+                        </span>
+
+                        <p>
+                            This is a demo checkout. No real payment
+                            will be processed.
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- =========================
+                         PLACE ORDER
+                    ========================== -->
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Place Order
+                    </button>
+
+
+                    <!-- =========================
+                         CONFIRMATION
+                    ========================== -->
+
+                    <div
+                        class="confirmation-message"
+                        id="confirmationMessage"
+                        hidden
+                    >
+
+                        <div class="success-icon">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Order Placed Successfully!
+                            </strong>
+
+                            <p>
+                                Thank you for ordering from Kitchsync.
+                                Your order has been received.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer class="footer">
+
+        <div class="footer-container">
+
+            <div>
+
+                <strong>
+                    Kitchsync
+                </strong>
+
+                <p>
+                    Intercontinental Restaurant Management System
+                </p>
+
+            </div>
+
+
+            <p>
+                © 2026 Kitchsync. All rights reserved.
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <script src="./data.js"></script>
+<script src="./script.js"></script>
+
+</body>
+
+</html>

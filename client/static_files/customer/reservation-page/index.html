@@ -1,0 +1,569 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Reserve a table at Kitchsync Restaurant"
+    >
+
+    <title>Kitchsync | Make a Reservation</title>
+
+    <!-- Reservation Page CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         NAVIGATION
+    ========================== -->
+    <header class="navbar">
+
+        <div class="navbar-container">
+
+            <a href="../landing/index.html" class="logo">
+                Kitchsync
+            </a>
+
+            <nav class="nav-links">
+                <a href="../menu/index.html">Menu</a>
+                <a href="index.html" class="active">Reservations</a>
+                <a href="../cart/index.html">Cart</a>
+                <a href="../login/index.html">Login</a>
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+    <main class="reservation-page">
+
+        <!-- Page Introduction -->
+        <section class="reservation-hero">
+
+            <div class="hero-content">
+
+                <p class="eyebrow">
+                    KITCHSYNC RESTAURANT
+                </p>
+
+                <h1>
+                    Reserve Your Table
+                </h1>
+
+                <p>
+                    Choose your preferred date, time, number of guests,
+                    and an available table.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             RESERVATION SECTION
+        ========================== -->
+        <section class="reservation-section">
+
+            <div class="reservation-container">
+
+                <!-- Reservation Form -->
+                <div class="reservation-card">
+
+                    <div class="section-heading">
+
+                        <h2>
+                            Reservation Details
+                        </h2>
+
+                        <p>
+                            Fill in your details to reserve a table.
+                        </p>
+
+                    </div>
+
+
+                    <form id="reservationForm">
+
+                        <!-- Date -->
+                        <div class="form-group">
+
+                            <label for="reservationDate">
+                                Date
+                            </label>
+
+                            <input
+                                type="date"
+                                id="reservationDate"
+                                name="reservationDate"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Time -->
+                        <div class="form-group">
+
+                            <label for="reservationTime">
+                                Time
+                            </label>
+
+                            <select
+                                id="reservationTime"
+                                name="reservationTime"
+                                required
+                            >
+
+                                <option value="">
+                                    Select a time
+                                </option>
+
+                                <option value="12:00 PM">
+                                    12:00 PM
+                                </option>
+
+                                <option value="1:00 PM">
+                                    1:00 PM
+                                </option>
+
+                                <option value="2:00 PM">
+                                    2:00 PM
+                                </option>
+
+                                <option value="5:00 PM">
+                                    5:00 PM
+                                </option>
+
+                                <option value="6:00 PM">
+                                    6:00 PM
+                                </option>
+
+                                <option value="7:00 PM">
+                                    7:00 PM
+                                </option>
+
+                                <option value="8:00 PM">
+                                    8:00 PM
+                                </option>
+
+                                <option value="9:00 PM">
+                                    9:00 PM
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Number of Guests -->
+                        <div class="form-group">
+
+                            <label for="guestCount">
+                                Number of Guests
+                            </label>
+
+                            <select
+                                id="guestCount"
+                                name="guestCount"
+                                required
+                            >
+
+                                <option value="">
+                                    Select guests
+                                </option>
+
+                                <option value="1">
+                                    1 Guest
+                                </option>
+
+                                <option value="2">
+                                    2 Guests
+                                </option>
+
+                                <option value="3">
+                                    3 Guests
+                                </option>
+
+                                <option value="4">
+                                    4 Guests
+                                </option>
+
+                                <option value="5">
+                                    5 Guests
+                                </option>
+
+                                <option value="6">
+                                    6 Guests
+                                </option>
+
+                                <option value="7">
+                                    7 Guests
+                                </option>
+
+                                <option value="8">
+                                    8 Guests
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Customer Name -->
+                        <div class="form-group">
+
+                            <label for="customerName">
+                                Your Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customerName"
+                                name="customerName"
+                                placeholder="Enter your name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Email -->
+                        <div class="form-group">
+
+                            <label for="customerEmail">
+                                Email Address
+                            </label>
+
+                            <input
+                                type="email"
+                                id="customerEmail"
+                                name="customerEmail"
+                                placeholder="you@example.com"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Phone -->
+                        <div class="form-group">
+
+                            <label for="customerPhone">
+                                Phone Number
+                            </label>
+
+                            <input
+                                type="tel"
+                                id="customerPhone"
+                                name="customerPhone"
+                                placeholder="Enter your phone number"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Table Selection -->
+                        <div class="form-group">
+
+                            <label>
+                                Select a Table
+                            </label>
+
+                            <input
+                                type="hidden"
+                                id="selectedTable"
+                                name="selectedTable"
+                                required
+                            >
+
+                            <div
+                                class="table-selection"
+                                id="tableSelection"
+                            >
+
+                                <!-- Available -->
+                                <button
+                                    type="button"
+                                    class="table-option available"
+                                    data-table="Table 1"
+                                >
+                                    <span class="table-number">
+                                        1
+                                    </span>
+
+                                    <span class="table-status">
+                                        Available
+                                    </span>
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="table-option available"
+                                    data-table="Table 2"
+                                >
+                                    <span class="table-number">
+                                        2
+                                    </span>
+
+                                    <span class="table-status">
+                                        Available
+                                    </span>
+                                </button>
+
+
+                                <!-- Booked -->
+                                <button
+                                    type="button"
+                                    class="table-option booked"
+                                    data-table="Table 3"
+                                    disabled
+                                >
+                                    <span class="table-number">
+                                        3
+                                    </span>
+
+                                    <span class="table-status">
+                                        Booked
+                                    </span>
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="table-option available"
+                                    data-table="Table 4"
+                                >
+                                    <span class="table-number">
+                                        4
+                                    </span>
+
+                                    <span class="table-status">
+                                        Available
+                                    </span>
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="table-option booked"
+                                    data-table="Table 5"
+                                    disabled
+                                >
+                                    <span class="table-number">
+                                        5
+                                    </span>
+
+                                    <span class="table-status">
+                                        Booked
+                                    </span>
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    class="table-option available"
+                                    data-table="Table 6"
+                                >
+                                    <span class="table-number">
+                                        6
+                                    </span>
+
+                                    <span class="table-status">
+                                        Available
+                                    </span>
+                                </button>
+
+                            </div>
+
+
+                            <!-- Table Legend -->
+                            <div class="table-legend">
+
+                                <span>
+                                    <i class="legend available"></i>
+                                    Available
+                                </span>
+
+                                <span>
+                                    <i class="legend booked"></i>
+                                    Booked
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Special Request -->
+                        <div class="form-group">
+
+                            <label for="specialRequest">
+                                Special Request
+                                <span>(Optional)</span>
+                            </label>
+
+                            <textarea
+                                id="specialRequest"
+                                name="specialRequest"
+                                rows="4"
+                                placeholder="Any special requests?"
+                            ></textarea>
+
+                        </div>
+
+
+                        <!-- Submit -->
+                        <button
+                            type="submit"
+                            class="primary-button"
+                        >
+                            Confirm Reservation
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <!-- =========================
+                     RESERVATION SUMMARY
+                ========================== -->
+                <aside class="reservation-summary">
+
+                    <div class="summary-card">
+
+                        <h2>
+                            Your Reservation
+                        </h2>
+
+                        <p class="summary-description">
+                            Your selected reservation details
+                            will appear here.
+                        </p>
+
+
+                        <div class="summary-item">
+
+                            <span>
+                                Date
+                            </span>
+
+                            <strong id="summaryDate">
+                                Not selected
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span>
+                                Time
+                            </span>
+
+                            <strong id="summaryTime">
+                                Not selected
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span>
+                                Guests
+                            </span>
+
+                            <strong id="summaryGuests">
+                                Not selected
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-item">
+
+                            <span>
+                                Table
+                            </span>
+
+                            <strong id="summaryTable">
+                                Not selected
+                            </strong>
+
+                        </div>
+
+
+                        <div
+                            class="confirmation-message"
+                            id="confirmationMessage"
+                            hidden
+                        >
+                            <strong>
+                                Reservation Confirmed!
+                            </strong>
+
+                            <p>
+                                Your table has been reserved successfully.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+    <footer class="footer">
+
+        <div class="footer-container">
+
+            <div>
+                <strong>
+                    Kitchsync
+                </strong>
+
+                <p>
+                    Restaurant Management System
+                </p>
+            </div>
+
+            <p>
+                © 2026 Kitchsync. All rights reserved.
+            </p>
+
+        </div>
+
+    </footer>
+
+
+    <!-- Reservation JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
+```
