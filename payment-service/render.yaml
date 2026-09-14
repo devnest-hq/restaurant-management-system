@@ -25,10 +25,12 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: RAZORPAY_KEY_ID
+      - key: PAYSTACK_SECRET_KEY
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: PAYSTACK_WEBHOOK_SECRET
         sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
+      - key: FLUTTERWAVE_SECRET_KEY
+        sync: false
+      - key: FLUTTERWAVE_WEBHOOK_SECRET
         sync: false
     healthCheckPath: /api/payments/health/

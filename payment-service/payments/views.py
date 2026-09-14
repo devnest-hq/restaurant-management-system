@@ -11,7 +11,8 @@ from .authentication import PaymentServiceAuthentication
 from .utils import log_payment_event
 from .services.notification_service import NotificationService
 from .services.stripe_service import StripeService
-from .services.razorpay_service import RazorpayService
+from .services.paystack_service import PaystackService
+from .services.flutterwave_service import FlutterwaveService
 from .serializers_refund import RefundRequestSerializer
 from .services.refund_service import RefundService
 from .utils import notify_node_backend
@@ -89,80 +90,102 @@ class CreatePaymentView(APIView):
                         status=status.HTTP_502_BAD_GATEWAY
                     )
 
-            elif method == Payment.PaymentMethod.RAZORPAY:
+            elif method == Payment.PaymentMethod.PAYSTACK:
                 try:
-                    razorpay_service = RazorpayService()
-                    session_data = razorpay_service.create_payment_session(payment)
-                except Exception as razorpay_error:
+                    paystack_service = PaystackService()
+                    session_data = paystack_service.create_payment_session(payment)
+                except Exception as paystack_error:
                     payment.status = Payment.PaymentStatus.FAILED
-                    payment.error_message = str(razorpay_error)
+                    payment.error_message = str(paystack_error)
                     payment.save()
                     return Response(
                         {
                             'success': False,
                             'error': {
                                 'code': 502,
-                                'message': 'Failed to create Razorpay payment session.',
+                                'message': 'Failed to create Paystack payment session.',
                             }
                         },
                         status=status.HTTP_502_BAD_GATEWAY
                     )
 
+    
+
+            elif method == Payment.PaymentMethod.FLUTTERWAVE:
+                try:
+                    flutterwave_service = FlutterwaveService()
+                    session_data = flutterwave_service.create_payment_session(payment)
+                except Exception as flutterwave_error:
+                    payment.status = Payment.PaymentStatus.FAILED
+                    payment.error_message = str(flutterwave_error)
+                    payment.save()
+                return Response(
+            {
+                'success': False,
+                'error': {
+                    'code': 502,
+                    'message': 'Failed to create Flutterwave payment session.',
+                }
+            },
+            status=status.HTTP_502_BAD_GATEWAY
+        )
+
+
             # Update payment with session data
             if session_data:
-                payment.gateway_session_id = session_data['session_id']
-                payment.client_secret = session_data['client_secret']
-                payment.payment_link = session_data['payment_link']
-                payment.status = Payment.PaymentStatus.PROCESSING
-                payment.save()
+                    payment.gateway_session_id = session_data['session_id']
+                    payment.client_secret = session_data['client_secret']
+                    payment.payment_link = session_data['payment_link']
+                    payment.status = Payment.PaymentStatus.PROCESSING
+                    payment.save()
 
-            log_payment_event(
-                payment,
-                'PAYMENT_CREATED',
-                {
-                    'order_id': order_id,
-                    'amount': str(validated_data['amount']),
-                    'method': method,
-                    'status': payment.status,
-                }
-            )
+                    log_payment_event(
+                        payment,
+                        'PAYMENT_CREATED',
+                        {
+                            'order_id': order_id,
+                            'amount': str(validated_data['amount']),
+                            'method': method,
+                            'status': payment.status,
+                        }
+                    )
 
-            return Response(
-                {
-                    'success': True,
-                    'message': 'Payment session created successfully.',
-                    'payment': PaymentResponseSerializer(payment).data,
-                },
-                status=status.HTTP_201_CREATED
-            )
+                    return Response(
+                        {
+                            'success': True,
+                            'message': 'Payment session created successfully.',
+                            'payment': PaymentResponseSerializer(payment).data,
+                        },
+                        status=status.HTTP_201_CREATED
+                    )
 
         except IntegrityError:
-            existing_payment = Payment.objects.filter(
-                idempotency_key=validated_data['idempotency_key']
-            ).first()
-            if existing_payment:
-                return Response(
-                    {
-                        'success': True,
-                        'message': 'Payment already created for this order.',
-                        'payment': PaymentResponseSerializer(existing_payment).data,
-                    },
-                    status=status.HTTP_200_OK
-                )
-            raise
+                    existing_payment = Payment.objects.filter(
+                        idempotency_key=validated_data['idempotency_key']
+                    ).first()
+                    if existing_payment:
+                        return Response(
+                            {
+                                'success': True,
+                                'message': 'Payment already created for this order.',
+                                'payment': PaymentResponseSerializer(existing_payment).data,
+                            },
+                            status=status.HTTP_200_OK
+                        )
+                    raise
 
         except Exception as e:
-            logger.error(f"Failed to create payment for order {order_id}: {str(e)}")
-            return Response(
-                {
-                    'success': False,
-                    'error': {
-                        'code': 500,
-                        'message': 'Failed to create payment.',
-                    }
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+                    logger.error(f"Failed to create payment for order {order_id}: {str(e)}")
+                    return Response(
+                        {
+                            'success': False,
+                            'error': {
+                                'code': 500,
+                                'message': 'Failed to create payment.',
+                            }
+                        },
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
 
 
 class HealthCheckView(APIView):
@@ -428,6 +451,8 @@ class RefundPaymentView(APIView):
             )
 
 
+
+    
 class ReconciliationView(APIView):
     """
     POST /api/payments/reconcile/
@@ -448,13 +473,14 @@ class ReconciliationView(APIView):
         try:
             reconciliation_service = ReconciliationService()
 
-            # Reconcile both gateways
             stripe_result = reconciliation_service.reconcile_stripe(days_back)
-            razorpay_result = reconciliation_service.reconcile_razorpay(days_back)
+            paystack_result = reconciliation_service.reconcile_paystack(days_back)
+            flutterwave_result = reconciliation_service.reconcile_flutterwave(days_back)
 
             logger.info(
-                f"Reconciliation completed - Stripe: {stripe_result['reconciled']} "
-                f"reconciled, Razorpay: {razorpay_result['reconciled']} reconciled"
+                f"Reconciliation completed - Stripe: {stripe_result['reconciled']}, "
+                f"Paystack: {paystack_result['reconciled']}, "
+                f"Flutterwave: {flutterwave_result['reconciled']}"
             )
 
             return Response(
@@ -463,7 +489,8 @@ class ReconciliationView(APIView):
                     'message': 'Reconciliation completed.',
                     'data': {
                         'stripe': stripe_result,
-                        'razorpay': razorpay_result,
+                        'paystack': paystack_result,
+                        'flutterwave': flutterwave_result,
                     },
                 },
                 status=status.HTTP_200_OK

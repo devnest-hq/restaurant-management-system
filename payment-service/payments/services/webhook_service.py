@@ -33,23 +33,38 @@ class WebhookService:
             logger.error(f"Error handling Stripe webhook: {str(e)}")
             raise
 
-    def handle_razorpay_event(self, event_type, event_data):
-        """Process Razorpay webhook events."""
+    def handle_paystack_event(self, event_type, event_data):
+        """Process Paystack webhook events."""
         try:
-            if event_type == 'payment.captured':
-                return self._handle_success(event_data)
-            elif event_type == 'payment.failed':
+            if event_type == 'charge.success':
+                    return self._handle_success(event_data)
+            elif event_type == 'charge.failed':
                 return self._handle_failure(event_data)
             elif event_type == 'refund.processed':
                 return self._handle_refund(event_data)
-            elif event_type == 'refund.failed':
-                return self._handle_refund_failure(event_data)
             else:
-                logger.info(f"Unhandled Razorpay event type: {event_type}")
+                logger.info(f"Unhandled Paystack event type: {event_type}")
                 return {'success': True, 'message': f'Unhandled event: {event_type}'}
 
         except Exception as e:
-            logger.error(f"Error handling Razorpay webhook: {str(e)}")
+            logger.error(f"Error handling Payst ack webhook: {str(e)}")
+            raise
+
+    def handle_flutterwave_event(self, event_type, event_data):
+        """Process Flutterwave webhook events."""
+        try:
+            if event_type == 'charge.completed':
+                return self._handle_success(event_data)
+            elif event_type == 'charge.failed':
+                return self._handle_failure(event_data)
+            elif event_type == 'refund.completed':
+                return self._handle_refund(event_data)
+            else:
+                logger.info(f"Unhandled Flutterwave event type: {event_type}")
+            return {'success': True, 'message': f'Unhandled event: {event_type}'}
+
+        except Exception as e:
+            logger.error(f"Error handling Flutterwave webhook: {str(e)}")
             raise
 
     def _handle_success(self, event_data):
