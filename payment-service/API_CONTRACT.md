@@ -1,7 +1,7 @@
 # Payment Service API Contract
 
 ## Overview
-The Payment Service is an isolated microservice built with Django. It handles all payment processing via Stripe and Razorpay and notifies the main backend (Node.js) of payment status changes.
+The Payment Service is an isolated microservice built with Django. It handles all payment processing via Stripe, Paystack and Flutterwave and notifies the main backend (Node.js) of payment status changes.
 
 **Base URL:** `http://localhost:8000` (development)
 
@@ -39,7 +39,7 @@ X-Payment-Service-Key: <shared-secret-key>
   "idempotency_key": "optional-custom-key"
 }
 ```
-- `method`: `"STRIPE"` or `"RAZORPAY"`
+- `method`: `"STRIPE"`, `"PAYSTACK"` or `"FLUTTERWAVE"`
 - `idempotency_key`: Optional. If not provided, the service generates one based on `order_id + method + amount`.
 - **Response (201 Created):**
 ```json
@@ -135,13 +135,19 @@ X-Payment-Service-Key: <shared-secret-key>
       "reconciled": 0,
       "still_pending": []
     },
-    "razorpay": {
+    "paystack": {
       "total_checked": 0,
       "reconciled": 0,
       "still_pending": []
-    }
+    },
+    "flutterwave": {
+      "total_checked": 0,
+      "reconciled": 0,
+      "still_pending": []
+    },
+    
   }
-}
+
 ```
 
 ## Payment Status Workflow
@@ -161,17 +167,22 @@ PENDING → PROCESSING → COMPLETED → REFUNDED
 | PARTIALLY_REFUNDED | Partial amount refunded |
 
 ## Webhook Endpoints
-These are called by Stripe/Razorpay, not by Node.js.
+These are called by Stripe,, not by Node.js.
 
 ### Stripe Webhook
 - **POST** `/api/payments/webhooks/stripe/`
 - **Headers:** `Stripe-Signature`
 - **Events handled:** `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`
 
-### Razorpay Webhook
-- **POST** `/api/payments/webhooks/razorpay/`
-- **Headers:** `X-Razorpay-Signature`
-- **Events handled:** `payment.captured`, `payment.failed`, `refund.processed`, `refund.failed`
+### Paystack Webhook
+- **POST** `/api/payments/webhooks/paystack/`
+- **Headers:** `X-Paystack-Signature`
+- **Events handled:** `charge.success`, `charge.failed`, `refund.processed`
+
+### Flutterwave Webhook
+- **POST** `/api/payments/webhooks/flutterwave/`
+- **Headers:** `verif-hash`
+- **Events handled:** `charge.completed`, `charge.failed`, `refund.completed`
 
 ## Notification to Node.js Backend
 After a payment status changes, the Payment Service will call the Node.js backend to update order status.
@@ -205,7 +216,7 @@ After a payment status changes, the Payment Service will call the Node.js backen
 | 404 | Payment not found |
 | 429 | Rate limit exceeded |
 | 500 | Internal server error |
-| 502 | Gateway error (Stripe/Razorpay failure) |
+| 502 | Gateway error (Stripe,Paystack/Flutterwave failure) |
 
 ## Rate Limits (Development)
 - Payment creation: 10/min

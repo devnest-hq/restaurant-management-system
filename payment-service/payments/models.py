@@ -18,7 +18,8 @@ class Payment(TimeStampedModel):
 
     class PaymentMethod(models.TextChoices):
         STRIPE = 'STRIPE', 'Stripe'
-        RAZORPAY = 'RAZORPAY', 'Razorpay'
+        PAYSTACK = 'PAYSTACK', 'Paystack'
+        FLUTTERWAVE = 'FLUTTERWAVE', 'Flutterwave'
 
     class PaymentStatus(models.TextChoices):
         PENDING = 'PENDING', 'Pending'

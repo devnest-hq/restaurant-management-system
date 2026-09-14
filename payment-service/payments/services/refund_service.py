@@ -1,17 +1,17 @@
 import logging
 import stripe
-import razorpay
+import requests
 from django.conf import settings
 from django.utils import timezone
 
 from ..models import Payment, Refund
-from ..utils import notify_node_backend, log_payment_event
+from ..utils import log_payment_event
 
 logger = logging.getLogger('payments')
 
 
 class RefundService:
-    """Handles refund operations for Stripe and Razorpay."""
+    """Handles refund operations for Stripe, Paystack, and Flutterwave."""
 
     def process_refund(self, payment, refund_amount=None, reason=None):
         """
@@ -33,8 +33,10 @@ class RefundService:
         try:
             if payment.method == Payment.PaymentMethod.STRIPE:
                 refund_data = self._refund_stripe(payment, amount_to_refund)
-            elif payment.method == Payment.PaymentMethod.RAZORPAY:
-                refund_data = self._refund_razorpay(payment, amount_to_refund)
+            elif payment.method == Payment.PaymentMethod.PAYSTACK:
+                refund_data = self._refund_paystack(payment, amount_to_refund)
+            elif payment.method == Payment.PaymentMethod.FLUTTERWAVE:
+                refund_data = self._refund_flutterwave(payment, amount_to_refund)
             else:
                 raise ValueError(f"Unsupported payment method: {payment.method}")
 
@@ -67,7 +69,6 @@ class RefundService:
             return refund_data
 
         except Exception as e:
-            # Mark refund as failed
             refund.status = Refund.RefundStatus.FAILED
             refund.error_message = str(e)
             refund.save()
@@ -82,7 +83,7 @@ class RefundService:
 
             refund = stripe.Refund.create(
                 payment_intent=payment.gateway_payment_id,
-                amount=int(amount_to_refund * 100),  # Convert to cents
+                amount=int(amount_to_refund * 100),
             )
 
             logger.info(f"Stripe refund created for order {payment.order_id}: {refund.id}")
@@ -97,28 +98,73 @@ class RefundService:
             logger.error(f"Stripe refund error for order {payment.order_id}: {str(e)}")
             raise
 
-    def _refund_razorpay(self, payment, amount_to_refund):
-        """Process refund via Razorpay."""
+    def _refund_paystack(self, payment, amount_to_refund):
+        """Process refund via Paystack."""
         try:
-            client = razorpay.Client(
-                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
-            )
-
-            refund = client.payment.refund(
-                payment.gateway_payment_id,
-                {
-                    'amount': int(amount_to_refund * 100),  # Convert to paise
-                }
-            )
-
-            logger.info(f"Razorpay refund created for order {payment.order_id}: {refund['id']}")
-
-            return {
-                'refund_id': refund['id'],
-                'refund_amount': amount_to_refund,
-                'status': refund.get('status', 'processed'),
+            headers = {
+                'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+                'Content-Type': 'application/json',
+            }
+            payload = {
+                'transaction': payment.gateway_payment_id,
+                'amount': int(amount_to_refund * 100),  # Convert to kobo
             }
 
-        except Exception as e:
-            logger.error(f"Razorpay refund error for order {payment.order_id}: {str(e)}")
+            response = requests.post(
+                'https://api.paystack.co/refund',
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if not data.get('status'):
+                raise Exception(data.get('message', 'Paystack refund failed'))
+
+            logger.info(f"Paystack refund created for order {payment.order_id}: {data['data']['id']}")
+
+            return {
+                'refund_id': str(data['data']['id']),
+                'refund_amount': amount_to_refund,
+                'status': data['data'].get('status', 'processed'),
+            }
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Paystack refund error for order {payment.order_id}: {str(e)}")
+            raise
+
+    def _refund_flutterwave(self, payment, amount_to_refund):
+        """Process refund via Flutterwave."""
+        try:
+            headers = {
+                'Authorization': f'Bearer {settings.FLUTTERWAVE_SECRET_KEY}',
+                'Content-Type': 'application/json',
+            }
+            payload = {
+                'amount': float(amount_to_refund),
+            }
+
+            response = requests.post(
+                f'https://api.flutterwave.com/v3/transactions/{payment.gateway_payment_id}/refund',
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get('status') != 'success':
+                raise Exception(data.get('message', 'Flutterwave refund failed'))
+
+            logger.info(f"Flutterwave refund created for order {payment.order_id}")
+
+            return {
+                'refund_id': str(data.get('data', {}).get('id', payment.gateway_payment_id)),
+                'refund_amount': amount_to_refund,
+                'status': 'processed',
+            }
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Flutterwave refund error for order {payment.order_id}: {str(e)}")
             raise

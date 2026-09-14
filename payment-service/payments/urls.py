@@ -10,5 +10,6 @@ urlpatterns = [
     path('refund/', views.RefundPaymentView.as_view(), name='refund-payment'),
     path('reconcile/', views.ReconciliationView.as_view(), name='reconcile-payments'),
     path('webhooks/stripe/', views_webhooks.stripe_webhook, name='stripe-webhook'),
-    path('webhooks/razorpay/', views_webhooks.RazorpayWebhookView.as_view(), name='razorpay-webhook'),
+    path('webhooks/paystack/', views_webhooks.PaystackWebhookView.as_view(), name='paystack-webhook'),
+    path('webhooks/flutterwave/', views_webhooks.FlutterwaveWebhookView.as_view(), name='flutterwave-webhook'),
 ]

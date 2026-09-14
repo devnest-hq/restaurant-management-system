@@ -34,9 +34,10 @@ jobs:
       NODE_BACKEND_API_KEY: test-node-key
       STRIPE_SECRET_KEY: sk_test_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_placeholder
-      RAZORPAY_KEY_ID: rzp_test_placeholder
-      RAZORPAY_KEY_SECRET: placeholder
-      RAZORPAY_WEBHOOK_SECRET: placeholder
+      PAYSTACK_SECRET_KEY: sk_test_placeholder
+      PAYSTACK_WEBHOOK_SECRET: placeholder
+      FLUTTERWAVE_SECRET_KEY: FLWSECK_TEST-placeholder
+      FLUTTERWAVE_WEBHOOK_SECRET: placeholder
 
     steps:
       - name: Checkout code
