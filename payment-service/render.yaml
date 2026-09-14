@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: payment-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: payment-service.onrender.com
+      - key: DEPLOYMENT_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PAYMENT_SERVICE_API_KEY
+        generateValue: true
+      - key: NODE_BACKEND_URL
+        sync: false
+      - key: NODE_BACKEND_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+    healthCheckPath: /api/payments/health/
