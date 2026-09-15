@@ -116,6 +116,9 @@ class CreatePaymentView(APIView):
                     flutterwave_service = FlutterwaveService()
                     session_data = flutterwave_service.create_payment_session(payment)
                 except Exception as flutterwave_error:
+                    logger.error(f'Flutterwave exception detail: {type(flutterwave_error).__name__}: {str(flutterwave_error)}')
+                    import traceback
+                    logger.error(f'Flutterwave traceback: {traceback.format_exc()}')
                     payment.status = Payment.PaymentStatus.FAILED
                     payment.error_message = str(flutterwave_error)
                     payment.save()
@@ -133,6 +136,7 @@ class CreatePaymentView(APIView):
 
             # Update payment with session data
             if session_data:
+                try:
                     payment.gateway_session_id = session_data['session_id']
                     payment.client_secret = session_data['client_secret']
                     payment.payment_link = session_data['payment_link']
@@ -149,8 +153,13 @@ class CreatePaymentView(APIView):
                             'status': payment.status,
                         }
                     )
+                except Exception as post_session_error:
+                    import traceback
+                    logger.error(f'POST-SESSION exception detail: {type(post_session_error).__name__}: {str(post_session_error)}')    
+                    logger.error(f'POST-SESSION traceback: {traceback.format_exc()}')
+                    raise
 
-                    return Response(
+                return Response(
                         {
                             'success': True,
                             'message': 'Payment session created successfully.',
