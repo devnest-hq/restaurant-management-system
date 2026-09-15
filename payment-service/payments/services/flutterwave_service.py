@@ -16,20 +16,23 @@ class FlutterwaveService:
             'Authorization': f'Bearer {self.secret_key}',
             'Content-Type': 'application/json',
         }
-
     def create_payment_session(self, payment):
         """
         Create a Flutterwave payment link.
         Returns (session_id, client_secret, payment_link) or raises exception.
         """
         try:
+            # Generate a clean tx_ref (no dashes, no uppercase)
+            tx_ref = f'flw-{str(payment.id).replace("-", "")[:16]}'
+
             payload = {
-                'tx_ref': str(payment.id),
+                'tx_ref': tx_ref,
                 'amount': str(payment.amount),
                 'currency': payment.currency.upper(),
-                'redirect_url': f'{settings.NODE_BACKEND_URL}/payment/callback',
+                'redirect_url': 'https://example.com/payment/callback',
+                'payment_options': 'card',
                 'customer': {
-                    'email': f'customer@order-{payment.order_id}.com',
+                    'email': 'customer@example.com',
                     'name': f'Order {payment.order_id}',
                 },
                 'customizations': {
@@ -48,18 +51,32 @@ class FlutterwaveService:
                 headers=self.headers,
                 timeout=10,
             )
-            response.raise_for_status()
+
+            # Log for debugging
+            logger.info(f"Flutterwave response status: {response.status_code}")
+            logger.info(f"Flutterwave response body: {response.text}")
+
             data = response.json()
 
             if data.get('status') != 'success':
-                raise Exception(data.get('message', 'Flutterwave initialization failed'))
+                error_msg = data.get('message', 'Flutterwave initialization failed')
+                logger.error(f"Flutterwave API error: {error_msg}")
+                raise Exception(error_msg)
 
-            logger.info(f"Flutterwave session created for order {payment.order_id}: {data['data']['tx_ref']}")
+            # Safely extract fields
+            response_data = data.get('data', {})
+            tx_ref_response = response_data.get('tx_ref', tx_ref)
+            payment_link = response_data.get('link')
+
+            if not payment_link:
+                raise Exception('Flutterwave did not return a payment link')
+
+            logger.info(f"Flutterwave session created for order {payment.order_id}: {tx_ref_response}")
 
             return {
-                'session_id': data['data']['tx_ref'],
+                'session_id': tx_ref_response,
                 'client_secret': None,
-                'payment_link': data['data']['link'],
+                'payment_link': payment_link,
             }
 
         except requests.exceptions.RequestException as e:
