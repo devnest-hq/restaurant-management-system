@@ -1,5 +1,6 @@
 const orderService = require("../services/orders.service");
 const invoiceService = require("../services/invoice.service");
+const paymentService = require("../services/payment.service");
 const getSafeErrorMessage = require("../utils/errorMessage");
 
 
@@ -85,5 +86,25 @@ exports.getInvoice = async (req, res) => {
     res.status(200).json(invoice);
   } catch (err) {
     res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Failed to fetch invoice") });
+  }
+};
+
+// exports.paymentConfirmed = async (req, res) => {
+//   try {
+//     const applied = await paymentService.applyPaymentEvent(req.params.id, req.body);
+//     console.log(`[payment] order ${req.params.orderId}: ${req.body.paymentStatus} (applied: ${applied})`);
+//     res.status(200).json({ "success": true });
+//   } catch (err) {
+//     res.status(err.status || 500).json({ error: err.message || "Failed to confirm payment" });
+//   }
+// }
+
+exports.paymentConfirmed = async (req, res) => {
+  try {
+    const { applied } = await paymentService.applyPaymentEvent(req.params.id, req.body);
+    console.log(`[payment] order ${req.params.id}: ${req.body.paymentStatus} (applied: ${applied})`);
+    res.status(200).json({ success: true, applied });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || "Failed to confirm payment" });
   }
 };

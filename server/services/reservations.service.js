@@ -8,6 +8,12 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
     throw err;
   }
 
+  if (!Number.isInteger(guestCount) || guestCount <= 0) {
+    const err = new Error("Guest count must be a positive integer");
+    err.status = 400;
+    throw err;
+  }
+
   const table = await prisma.table.findUnique({
     where: { id: parseInt(tableId) }
   });

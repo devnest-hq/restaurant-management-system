@@ -9,6 +9,12 @@ exports.createMenuItem = async ({ name, category, price, description, imageUrl, 
     throw err;
   }
 
+  if (typeof price !== 'number' || price <= 0) {
+    const err = new Error("Price must be a positive number");
+    err.status = 400;
+    throw err;
+  }
+
   const item = await prisma.menuItem.create({
     data: {
       name,
