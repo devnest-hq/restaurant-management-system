@@ -48,15 +48,19 @@ model MenuItemIngredient {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  status     OrderStatus @default(PENDING)
-  totalPrice Decimal     @db.Decimal(10, 2)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  customerId Int
-  invoices   Invoice[]
-  customer   User        @relation(fields: [customerId], references: [id])
-  items      OrderItem[]
+  id               Int           @id @default(autoincrement())
+  status           OrderStatus   @default(PENDING)
+  totalPrice       Decimal       @db.Decimal(10, 2)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  customerId       Int
+  invoices         Invoice[]
+  customer         User          @relation(fields: [customerId], references: [id])
+  items            OrderItem[]
+  paymentStatus    PaymentStatus @default(PENDING)
+  gatewayPaymentId String?
+  refundId         String?
+  refundAmount     Decimal?      @db.Decimal(10, 2)
 
   @@index([customerId])
   @@index([status])
@@ -163,4 +167,14 @@ enum ReservationStatus {
   PENDING
   CONFIRMED
   COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  REFUND_FAILED
+  DISPUTED
 }

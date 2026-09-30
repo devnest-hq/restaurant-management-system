@@ -7,6 +7,9 @@ const requirePasswordChange = require("../middleware/verify.password.change");
 const { validate, validateParams } = require("../middleware/validate");
 const { idParamSchema } = require("../schemas/common.schema");
 const { createOrderSchema, updateOrderStatusSchema } = require("../schemas/orders.schema");
+const serviceAuth = require("../middleware/service.auth");
+
+router.post("/:id/payment-confirmed", serviceAuth, ordersController.paymentConfirmed);
 
 router.use(verify);
 router.use(requirePasswordChange);
@@ -17,7 +20,6 @@ router.get("/kitchen", verifyRole(["CHEF", "ADMIN"]), ordersController.getKitche
 router.get("/:id", verifyRole(["CUSTOMER", "WAITER", "CHEF", "ADMIN"]), validateParams(idParamSchema), ordersController.getOrderById);
 router.patch("/:id/cancel", verifyRole(["CUSTOMER"]), validateParams(idParamSchema), ordersController.cancelOrder);
 router.patch("/:id/status", verifyRole(["CHEF", "WAITER", "ADMIN"]), validateParams(idParamSchema), validate(updateOrderStatusSchema), ordersController.updateOrderStatus);
-
 router.get("/:id/invoice", verifyRole(["CUSTOMER", "WAITER", "ADMIN"]), validateParams(idParamSchema), ordersController.getInvoice);
 
 module.exports = router;
