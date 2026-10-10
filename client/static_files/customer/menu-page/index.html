@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Menu page</title>
+
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- ================= HEADER ================= -->
+        <header class="top-header">
+
+            <div class="search-container">
+                <input type="text" placeholder="Search">
+                <button class="filter-btn">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+
+            <div class="header-icons">
+
+                <a href="cart-page">
+                    <button>
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </button>
+                </a>
+
+                <a href="Notification">
+                    <button>
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
+                </a>
+
+                <a href="profile">
+                    <button>
+                        <i class="fa-regular fa-user"></i>
+                    </button>
+                </a>
+            </div>
+
+        </header>
+
+
+        <!-- ================= CATEGORIES ================= -->
+        <section class="categories">
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-bowl-food"></i>
+                </div>
+                <span>Snacks</span>
+            </div>
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <span>Meal</span>
+            </div>
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-tree"></i>
+                </div>
+                <span>Vegan</span>
+            </div>
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-ice-cream"></i>
+                </div>
+                <span>Dessert</span>
+            </div>
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-wine-glass"></i>
+                </div>
+                <span>Drinks</span>
+            </div>
+
+            <div class="category">
+                <div class="category-icon">
+                    <i class="fa-solid fa-cheese"></i>
+                </div>
+                <span>Toppings</span>
+            </div>
+
+        </section>
+
+
+        <!-- ================= SORT ================= -->
+<section class="sort-section">
+
+    <div class="sort-text">
+        <span>Sort By</span>
+        <span class="popular"></span>
+    </div>
+
+    <div class="sort-container">
+
+        <button class="sort-btn" type="button">
+            <i class="fa-solid fa-sliders"></i>
+        </button>
+
+        <!-- SORT OPTIONS -->
+        <div class="sort-menu">
+
+            <button class="sort-option active" data-sort="all">
+                All Items
+            </button>
+
+            <button class="sort-option" data-sort="popular">
+                Popular
+            </button>
+
+            <button class="sort-option" data-sort="categories">
+                Categories
+            </button>
+
+            <button class="sort-option" data-sort="az">
+                A–Z
+            </button>
+
+            <button class="sort-option" data-sort="za">
+                Z–A
+            </button>
+
+        </div>
+    </div>
+
+</section>
+
+
+        <!-- ================= FOOD LIST ================= -->
+        <main class="food-list">
+
+            
+        </main>
+
+
+        <!-- =========================FOOD DETAILS========================= -->
+
+<section class="food-details">
+
+    <!-- DETAILS HEADER -->
+    <div class="details-header">
+
+        <button class="details-back" type="button">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <div class="details-title">
+    <h1></h1>
+
+    <span class="details-rating">
+        5.0
+        <i class="fa-solid fa-star"></i>
+    </span>
+</div>
+
+        <button class="details-favorite" type="button">
+            <i class="fa-solid fa-heart"></i>
+        </button>
+
+    </div>
+
+
+    <!-- DETAILS CONTENT -->
+    <div class="details-content">
+
+        <!-- IMAGE -->
+        <img
+            class="details-image"
+            src=""
+            alt=""
+        >
+
+
+        <!-- PRICE + QUANTITY -->
+        <div class="details-price-row">
+
+            <span class="details-price">
+                ₦0
+            </span>
+
+            <div class="quantity-control">
+
+                <button class="quantity-minus" type="button">
+                    −
+                </button>
+
+                <span class="quantity-value">
+                    1
+                </span>
+
+                <button class="quantity-plus" type="button">
+                    +
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- DESCRIPTION -->
+        <div class="details-description">
+
+    <h2 class="details-name"></h2>
+
+    <p class="details-short-description"></p>
+
+    <p class="details-long-description"></p>
+
+</div>
+
+
+        <!-- TOPPINGS -->
+
+
+<div class="details-toppings">
+    <h2 class="toppings-header">TOPPINGS</h2>
+
+    <h3>Choose your toppings</h3>
+
+    <div class="toppings-list"></div>
+
+</div>
+
+
+        <!-- ADD TO CART -->
+        <button class="add-to-cart-btn" type="button">
+
+            <i class="fa-solid fa-bag-shopping"></i>
+
+            <span>Add to Cart</span>
+
+        </button>
+
+    </div>
+
+</section>
+
+
+        <!-- ================= BOTTOM NAVIGATION ================= -->
+        <nav class="bottom-nav">
+
+            <button class="nav-item active">
+                <i class="fa-solid fa-house"></i>
+            </button>
+
+            <button class="nav-item">
+                <i class="fa-solid fa-bowl-food"></i>
+            </button>
+
+            <button class="nav-item">
+                <i class="fa-solid fa-heart"></i>
+            </button>
+
+            <button class="nav-item">
+                <i class="fa-solid fa-clipboard"></i>
+            </button>
+
+            <button class="nav-item">
+                <i class="fa-solid fa-headphones"></i>
+            </button>
+
+        </nav>
+
+    </div>
+<script src="data.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
