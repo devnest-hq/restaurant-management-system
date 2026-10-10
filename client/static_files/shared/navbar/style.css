@@ -4,6 +4,10 @@
     box-sizing: border-box;
   }
 
+  html, body {
+    height: 100%;
+  }
+
   body {
     min-height: 100vh;
     background: #f4f4f2;
@@ -14,14 +18,18 @@
   }
 
   .nav-bar {
-    width: 100%;
-    max-width: 480px;
+    /* fluid width: never smaller than 280px, never bigger than 900px,
+       otherwise scales with the viewport */
+    width: clamp(280px, 90vw, 900px);
+    margin: 0 auto;
     background: #f5dd8f;
-    border-radius: 28px 28px 0 0;
+    border-radius: clamp(16px, 2.5vw, 32px) clamp(16px, 2.5vw, 32px) 0 0;
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 18px 12px;
+    flex-wrap: nowrap;
+    padding: clamp(10px, 2vw, 26px) clamp(6px, 2vw, 32px);
+    padding-bottom: calc(clamp(10px, 2vw, 26px) + env(safe-area-inset-bottom));
   }
 
   .nav-item {
@@ -33,8 +41,9 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px;
+    padding: clamp(6px, 1.2vw, 14px);
     border-radius: 12px;
+    flex: 0 1 auto;
     transition: background 0.2s ease, transform 0.15s ease;
   }
 
@@ -51,11 +60,58 @@
   }
 
   .nav-item svg {
-    width: 28px;
-    height: 28px;
+    /* scales fluidly from small phones (20px) up to large desktops (40px) */
+    width: clamp(20px, 3.5vw, 40px);
+    height: clamp(20px, 3.5vw, 40px);
     stroke: #4a4a3f;
     stroke-width: 1.6;
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  /* Very small phones (e.g. iPhone SE, ~320px) */
+  @media (max-width: 360px) {
+    .nav-bar {
+      width: 96vw;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+  }
+
+  /* Tablets and up: float the bar with a shadow instead of edge-to-edge */
+  @media (min-width: 768px) {
+    body {
+      align-items: center; /* center vertically on larger screens for preview */
+      padding: 24px;
+    }
+    .nav-bar {
+      border-radius: clamp(20px, 2vw, 32px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      margin-bottom: 24px;
+    }
+  }
+
+  /* Large desktops / big monitors: cap growth and add breathing room */
+  @media (min-width: 1440px) {
+    .nav-bar {
+      width: clamp(600px, 45vw, 900px);
+      padding: 28px 40px;
+    }
+    .nav-item svg {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  /* Landscape phones: shrink vertical padding so bar doesn't eat the screen */
+  @media (max-height: 420px) and (orientation: landscape) {
+    .nav-bar {
+      padding-top: 8px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    .nav-item svg {
+      width: clamp(18px, 5vw, 24px);
+      height: clamp(18px, 5vw, 24px);
+    }
   }

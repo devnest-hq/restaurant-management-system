@@ -19,7 +19,10 @@ app.set("io", io);
 
 notificationService.setSocketIO(io);
 
-cron.schedule("30 10 * * *", cleanupExpiredTokens);
+cron.schedule("30 10 * * *", cleanupExpiredTokens, {
+  scheduled: true,
+  timezone: "Africa/Lagos"
+});
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
