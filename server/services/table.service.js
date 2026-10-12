@@ -25,6 +25,14 @@ exports.createTable = async ({ tableNumber, capacity }) => {
   }
 }
 
+exports.getTables = async () => {
+  try {
+    return await prisma.table.findMany();
+  } catch (err) {
+    throw err;
+  }
+}
+
 exports.updateTableCapacity = async (id, capacity) => {
   if (!capacity) {
     const err = new Error("Table capacity is required");

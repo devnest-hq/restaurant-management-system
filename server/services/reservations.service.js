@@ -110,7 +110,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
   const isAdmin = user.role === "ADMIN";
   
   if (!isOwner && !isAdmin) {
-    const err = new Error("You do not have permission to modify thus reservation ");
+    const err = new Error("You do not have permission to modify this reservation ");
     err.status = 400;
     throw err;
   }
