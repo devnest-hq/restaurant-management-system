@@ -13,6 +13,7 @@ router.use(requirePasswordChange);
 router.use(verifyRole(["ADMIN"]));
 
 router.post("/", validate(createTableSchema), tablesController.createTable);
+router.get("/", tablesController.getTables);
 router.patch("/:id", validateParams(idParamSchema), validate(updateTableCapacitySchema), tablesController.updateTableCapacity);
 router.delete("/:id", validateParams(idParamSchema), tablesController.deleteTable);
 

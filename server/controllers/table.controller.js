@@ -10,6 +10,15 @@ exports.createTable = async (req, res) => {
   }
 }
 
+exports.getTables = async (req, res) => {
+  try {
+    const tables = await tableService.getTables();
+    res.status(200).json(tables);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't get tables") });
+  }
+}
+
 exports.updateTableCapacity = async (req, res) => {
   try {
     const id = req.params.id;
