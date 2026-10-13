@@ -1,5 +1,4 @@
 const prisma = require("../prisma/client");
-const inventoryService = require("./inventory.service");
 const invoiceService = require("./invoice.service");
 const { createNotification, notifyRoles } = require("./notification.service");
 

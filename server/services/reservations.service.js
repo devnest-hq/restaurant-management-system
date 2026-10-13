@@ -92,7 +92,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
 
   if (!reservation) {
     const err = new Error("Reservation not found");
-    err.status = 400;
+    err.status = 404;
     throw err;
   }
 
@@ -111,7 +111,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
   
   if (!isOwner && !isAdmin) {
     const err = new Error("You do not have permission to modify this reservation ");
-    err.status = 400;
+    err.status = 403;
     throw err;
   }
   
@@ -123,7 +123,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await createNotification({
       userId: user.userId,
       type: "RESERVATION CANCELLED",
-      message: `Your Reservation for table ${table.tableNumber} on ${date} at ${timeSlot} has been cancelled.`
+      message: `Your Reservation for table ${table.tableNumber} on ${reservation.date} at ${reservation.timeSlot} has been cancelled.`
     });
     return { message: "Reservation cancelled" }
   }
@@ -142,7 +142,7 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await createNotification({
       userId: user.userId,
       type: "RESERVATION UPDATED",
-      message: `Your Reservation for table ${table.tableNumber} on ${date} at ${timeSlot} has been updated.`
+      message: `Your Reservation for table ${table.tableNumber} on ${reservation.date} at ${reservation.timeSlot} has been updated.`
     });
 
     return updatedReservation;
