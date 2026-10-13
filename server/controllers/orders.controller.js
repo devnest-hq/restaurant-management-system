@@ -2,6 +2,7 @@ const orderService = require("../services/orders.service");
 const invoiceService = require("../services/invoice.service");
 const paymentService = require("../services/payment.service");
 const getSafeErrorMessage = require("../utils/errorMessage");
+const { emitNewOrder, emitOrderStatusUpdated } = require("../socket/emitters");
 
 
 exports.createOrder = async (req, res) => {
@@ -10,8 +11,7 @@ exports.createOrder = async (req, res) => {
     const  customerId  = req.user.userId;
     const order = await orderService.createOrder({ customerId, items });
 
-    const io = req.app.get("io");
-    if (io) io.emit("new-order", order);
+    emitNewOrder(req.app.get("io"), order);
 
     res.status(201).json(order);
   } catch (err) {
@@ -49,8 +49,7 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
 
-    const io = req.app.get("io");
-    if (io) io.emit("order-status-updated", order);
+    emitOrderStatusUpdated(req.app.get("io"), order);
 
     res.json(order);
   } catch (err) {
@@ -62,8 +61,7 @@ exports.cancelOrder = async (req, res) => {
   try {
     const order = await orderService.cancelOrder(req.params.id, req.user.userId);
 
-    const io = req.app.get("io");
-    if (io) io.emit("order-status-updated", order);
+    emitOrderStatusUpdated(req.app.get("io"), order);
 
     res.status(200).json(order);
   } catch (err) {
