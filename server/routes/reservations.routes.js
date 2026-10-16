@@ -14,6 +14,6 @@ router.use(requirePasswordChange);
 router.get("/availability", reservationsController.getAvailableTables);
 router.post("/", verifyRole(["CUSTOMER"]), validate(createReservationSchema), reservationsController.createReservation);
 router.patch("/:id", validateParams(idParamSchema), validate(updateReservationSchema), reservationsController.updateReservation);
-router.patch("/cancel/:id", validateParams(idParamSchema), reservationsController.cancelReservation);
+router.patch("/:id/cancel", validateParams(idParamSchema), reservationsController.cancelReservation);
 
 module.exports = router;
