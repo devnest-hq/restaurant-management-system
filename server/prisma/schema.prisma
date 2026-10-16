@@ -93,12 +93,13 @@ model Reservation {
   guestCount Int
   status     ReservationStatus @default(CONFIRMED)
   createdAt  DateTime          @default(now())
+  cancelledAt DateTime?
+  cancelledBy Int?
   customerId Int
   tableId    Int
   customer   User              @relation(fields: [customerId], references: [id])
   table      Table             @relation(fields: [tableId], references: [id])
 
-  @@unique([tableId, date, timeSlot])
   @@index([customerId])
 }
 
@@ -167,6 +168,7 @@ enum ReservationStatus {
   PENDING
   CONFIRMED
   COMPLETED
+  CANCELLED
 }
 
 enum PaymentStatus {

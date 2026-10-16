@@ -32,3 +32,12 @@ exports.updateReservation = async (req, res) => {
     res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't update reservation") });
   }
 }
+
+exports.cancelReservation = async (req, res) => {
+  try {
+    const reservation = await reservationService.cancelReservation(req.params.id, req.user);
+    res.status(200).json(reservation);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't cancel reservation") });
+  }
+}

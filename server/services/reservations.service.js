@@ -1,17 +1,21 @@
 const prisma = require("../prisma/client");
 const { createNotification } = require("../services/notification.service");
 
+const CANCELLABLE_STATUSES = ["PENDING", "CONFIRMED"];
+
+const httpError = (status, message) => {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+};
+
 exports.createReservation = async(customerId, tableId, date, timeSlot, guestCount) => {
   if (!date || !timeSlot || !guestCount) {
-    const err = new Error("All fields are required ");
-    err.status = 400;
-    throw err;
+    throw httpError(400, "All fields are required");
   }
 
   if (!Number.isInteger(guestCount) || guestCount <= 0) {
-    const err = new Error("Guest count must be a positive integer");
-    err.status = 400;
-    throw err;
+    throw httpError(400, "Guest count must be a positive integer");
   }
 
   const table = await prisma.table.findUnique({
@@ -19,15 +23,11 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
   });
 
   if (!table) {
-    const err = new Error("Table not found");
-    err.status = 400;
-    throw err;
+    throw httpError(400, "Table not found");
   }
 
   if (guestCount > table.capacity) {
-    const err = new Error(`Guest count exceeds table capacity max (${table.capacity})`);
-    err.status = 400;
-    throw err;
+    throw httpError(400, `Guest count exceeds table capacity max (${table.capacity})`);
   }
 
   try {
@@ -54,9 +54,7 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
     return reservation;
   } catch (err) {
     if (err.code === "P2002") {
-      const error = new Error("This table is already booked for that time and date");
-      error.status = 409;
-      throw error;
+      throw httpError(409, "This table is already booked for that time and date");
     }
     throw err;
   }
@@ -65,9 +63,7 @@ exports.createReservation = async(customerId, tableId, date, timeSlot, guestCoun
  
 exports.getAvailableTables = async({ date, timeSlot }) => {
   if (!date || !timeSlot) {
-    const err = new Error("Date and time slot are required");
-    err.status = 400;
-    throw err;
+    throw httpError(400, "Date and time slot are required");
   }
   
   const availableTables = await prisma.table.findMany({
@@ -75,7 +71,8 @@ exports.getAvailableTables = async({ date, timeSlot }) => {
       reservations: {
         none: {
           date: new Date(date),
-          timeSlot
+          timeSlot,
+          status: { not: "CANCELLED" }
         }
       }
     }
@@ -85,47 +82,29 @@ exports.getAvailableTables = async({ date, timeSlot }) => {
 }
  
 
-exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, user) => {
+exports.updateReservation = async (id, { date, timeSlot, guestCount }, user) => {
   const reservation = await prisma.reservation.findUnique({
-    where: { id: parseInt(id) }
+    where: { id: parseInt(id) },
+    include: { table: true },
   });
 
   if (!reservation) {
-    const err = new Error("Reservation not found");
-    err.status = 404;
-    throw err;
+    throw httpError(404, "Reservation not found");
   }
 
-  const table = await prisma.table.findUnique({
-    where: { id: reservation.tableId }
-  });
+  if (reservation.status === "CANCELLED") {
+    throw httpError(400, "Cannot update a cancelled reservation");
+  }
 
-  if (guestCount !== undefined && guestCount > table.capacity) {
-    const err = new Error(`Guest count exceeds table capacity max (${table.capacity})`);
-    err.status = 400;
-    throw err;
+  if (guestCount !== undefined && guestCount > reservation.table.capacity) {
+    throw httpError(400, `Guest count exceeds table capacity max (${reservation.table.capacity})`);
   }
   
   const isOwner = reservation.customerId === user.userId;
   const isAdmin = user.role === "ADMIN";
   
   if (!isOwner && !isAdmin) {
-    const err = new Error("You do not have permission to modify this reservation ");
-    err.status = 403;
-    throw err;
-  }
-  
-  if (action === "cancel") {
-    await prisma.reservation.delete({
-      where: { id: parseInt(id) }
-    });
-
-    await createNotification({
-      userId: user.userId,
-      type: "RESERVATION CANCELLED",
-      message: `Your Reservation for table ${table.tableNumber} on ${reservation.date} at ${reservation.timeSlot} has been cancelled.`
-    });
-    return { message: "Reservation cancelled" }
+    throw httpError(403, "You do not have permission to modify this reservation");
   }
   
   try {
@@ -142,17 +121,65 @@ exports.updateReservation = async (id, { action, date, timeSlot, guestCount }, u
     await createNotification({
       userId: user.userId,
       type: "RESERVATION UPDATED",
-      message: `Your Reservation for table ${table.tableNumber} on ${reservation.date} at ${reservation.timeSlot} has been updated.`
+      message: `Your Reservation for table ${reservation.table.tableNumber} on ${reservation.date} at ${reservation.timeSlot} has been updated.`
     });
 
     return updatedReservation;
 
   } catch (err) {
     if (err.code === "P2002") {
-      const error = new Error("This table is already booked for that time and date");
-      error.status = 409;
-      throw error;
+      throw httpError(409, "This table is already booked for that time and date");
     }
     throw err;
   }
 }
+
+exports.cancelReservation = async (id, user) => {
+  const reservationId = Number(id);
+  if (!Number.isInteger(reservationId) || reservationId <= 0) {
+    throw httpError(400, "Reservation id must be a positive integer");
+  }
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    include: { table: true },
+  });
+
+  if (!reservation) {
+    throw httpError(404, "Reservation not found");
+  }
+
+  const isOwner = reservation.customerId === user.userId;
+  const isAdmin = user.role === "ADMIN";
+  if (!isOwner && !isAdmin) {
+    throw httpError(403, "You do not have permission to cancel this reservation");
+  }
+
+  if (reservation.status === "CANCELLED") {
+    throw httpError(409, "Reservation is already cancelled");
+  }
+  if (!CANCELLABLE_STATUSES.includes(reservation.status)) {
+    throw httpError(409, "This reservation can no longer be cancelled");
+  }
+
+  const cancelledReservation = await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { 
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+      cancelledBy: user.userId
+    },
+  });
+
+  try {
+    await createNotification({
+      userId: reservation.customerId,
+      type: "RESERVATION_CANCELLED",
+      message: `Your reservation for table ${reservation.table.tableNumber} on ${reservation.date.toISOString().slice(0, 10)} at ${reservation.timeSlot} has been cancelled.`,
+    });
+  } catch (err) {
+    console.error("Failed to create cancellation notification:", err.message);
+  }
+
+  return cancelledReservation;
+};
