@@ -6,12 +6,13 @@ const app = require("./app");
 const initializeSocket = require("./socket/initialize.socket");
 const notificationService = require("./services/notification.service");
 const cleanupExpiredTokens = require("./jobs/cleanupExpiredTokens");
+const { allowedOrigins } = require("./config/cors");
 
 const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
 
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: allowedOrigins } });
 
 initializeSocket(io);
 
