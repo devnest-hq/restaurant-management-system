@@ -4,22 +4,22 @@ export const useAuthStore = create((set) => ({
   user: null,
   accessToken: null,
   status: "loading",
-  mustChangePassword: false,
+  // mustChangePassword: false,
 
-  setSession: ({ user, accessToken, mustChangePassword = false }) => set({
+  setSession: ({ user, accessToken }) => set({
     user,
     accessToken,
     status: "authenticated",
-    mustChangePassword
+    // mustChangePassword
   }),
 
-  setToken: (token) => set({ token }),
+  setToken: (token) => set({ accessToken: token }),
 
   clearSession: () => set({
     user: null,
     accessToken: null,
     status: "unauthenticated",
-    mustChangePassword: false,
+    // mustChangePassword: false,
   })
   
 }));
