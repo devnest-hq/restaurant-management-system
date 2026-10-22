@@ -53,7 +53,7 @@ exports.login = async (email, password) => {
   const accessToken = jwt.sign(
     { userId: user.id, role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '15s' }
   );
 
   const refreshToken = jwt.sign(
@@ -121,14 +121,26 @@ exports.refresh = async (refreshToken) => {
     throw error;
   }
 
-  const user = await prisma.user.findUnique({ where: { id: decoded.userId}});
+  const user = await prisma.user.findUnique({ 
+    where: { id: decoded.userId },
+    select: {
+      name: true,
+      id: true,
+      mustChangePassword: true,
+      email: true,
+      role: true,
+    }
+  });
   const accessToken = jwt.sign(
     { userId: user.id, role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '15s' }
   );
 
-  return accessToken;
+  return {
+    user,
+    accessToken
+  };
 }
 
 exports.logout = async (refreshToken) => {
