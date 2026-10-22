@@ -30,7 +30,6 @@ export default function Login() {
       const { user, accessToken } = res.data;
 
       setSession({ user, accessToken });
-      console.log(user, accessToken);
       
       navigate(
         user.mustChangePassword 

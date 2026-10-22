@@ -42,8 +42,8 @@ exports.login = async (req, res) => {
 exports.refresh = async (req, res) => {
   try {
     const refreshToken = req.cookies?.jwt;
-    const accessToken = await authServices.refresh(refreshToken);
-    res.status(200).json({ accessToken: accessToken });
+    const { user, accessToken } = await authServices.refresh(refreshToken);
+    res.status(200).json({ user, accessToken });
 
   } catch (err) {
     res.status(err.status || 500).json({ error: getSafeErrorMessage(err, "Couldn't log you out") });
