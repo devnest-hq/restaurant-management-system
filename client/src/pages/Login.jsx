@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../schemas/auth.schema";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth.store";
+import { ROLE_HOME } from "../constants/roles";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,13 +16,6 @@ export default function Login() {
     setError,
     formState: { errors, isSubmitting }
   } = useForm({  resolver: zodResolver(loginSchema) });
-
-  const ROLE_HOME = {
-    CUSTOMER: "/menu",
-    WAITER: "/waiter",
-    CHEF: "/kitchen",
-    ADMIN: "/admin",
-};
 
   const onSubmit = async (data) => {
     // Submit to server
