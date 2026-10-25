@@ -7,9 +7,12 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword"
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useSocket } from "./hooks/useSocket";
 import "./App.css"
 
 function App() {
+  useSocket();
+
   useEffect(() => {
     getRefreshPromise().catch(() => {
       useAuthStore.getState().clearSession();

@@ -22,6 +22,7 @@ const initializeSocket = (io) => {
   io.on("connection", (socket) => {
     socket.join(`user-${socket.userId}`);
     socket.join(`role-${socket.role}`);
+    console.log(`user-${socket.userId} connected`)
 
     socket.on("disconnect", () => {
       console.log(`user-${socket.userId} disconnected`);
