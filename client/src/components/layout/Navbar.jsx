@@ -1,20 +1,15 @@
-import { Home, Heart, ClipboardList, Headset } from "lucide-react";
-
-const items = [
-  { label: "Home", icon: Home, active: true },
-  { label: "Favorites", icon: Heart },
-  { label: "Orders", icon: ClipboardList },
-  { label: "Support", icon: Headset },
-];
+import { NAV_LINKS } from "../../constants/roles";
+import { useAuthStore } from "../../store/auth.store";
 
 export default function Navbar() {
+  const user = useAuthStore(state => state.user);
+
+  const links = user && !user.mustChangePassword ? NAV_LINKS[user.role] ?? [] : [];
+
   return (
-    <nav
-      aria-label="Main navigation"
-      className="fixed bottom-3 left-1/2 z-20 w-[min(900px,calc(100%-24px))] -translate-x-1/2 rounded-[28px] bg-[#fde68a] shadow-[0_2px_10px_rgba(120,90,20,0.1)]"
-    >
+    <nav aria-label="Main navigation" className="fixed bottom-3 left-1/2 z-20 w-[min(900px,calc(100%-24px))] -translate-x-1/2 rounded-[28px] bg-[#fde68a] shadow-[0_2px_10px_rgba(120,90,20,0.1)]">
       <ul className="m-0 flex list-none items-stretch justify-around px-3 py-2">
-        {items.map(({ label, icon: Icon, active }) => (
+        {links.map(({ label, icon: Icon, active }) => (
           <li key={label} className="flex flex-1 justify-center">
             <a href="#"
               aria-current={active ? "page" : undefined}
