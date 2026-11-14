@@ -5,8 +5,10 @@ import { getRefreshPromise } from "./api/client";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import ChangePassword from "./pages/ChangePassword"
+import ChangePassword from "./pages/ChangePassword";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Menu from "./pages/customer/menuPage/Menu";
+import MenuItemDetails from "./pages/customer/menuPage/MenuItemDetails";
 import { useSocket } from "./hooks/useSocket";
 import "./App.css"
 
@@ -34,7 +36,8 @@ function App() {
       {/* Protected Routes */}
       {/* CUSTOMER */}
       <Route element={<ProtectedRoute allowedRoles={["CUSTOMER"]} />}>
-        <Route path="/menu" element={<h1>Menu Page</h1>} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/menu/:id" element={<MenuItemDetails />} />
       </Route>
 
     </Routes>

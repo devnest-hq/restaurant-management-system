@@ -7,7 +7,7 @@ export default function Navbar() {
   const links = user && !user.mustChangePassword ? NAV_LINKS[user.role] ?? [] : [];
 
   return (
-    <nav aria-label="Main navigation" className="fixed bottom-3 left-1/2 z-20 w-[min(900px,calc(100%-24px))] -translate-x-1/2 rounded-[28px] bg-[#fde68a] shadow-[0_2px_10px_rgba(120,90,20,0.1)]">
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-1/2 z-20 w-full max-w-275 -translate-x-1/2 rounded-t-[28px] bg-[#fde68a] shadow-[0_2px_10px_rgba(120,90,20,0.1)]">
       <ul className="m-0 flex list-none items-stretch justify-around px-3 py-2">
         {links.map(({ label, icon: Icon, active }) => (
           <li key={label} className="flex flex-1 justify-center">
