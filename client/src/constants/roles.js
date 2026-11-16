@@ -23,7 +23,7 @@ export const NAV_LINKS = {
     { label: "Inventory", to: "/inventory", icon: Package }
   ],
   WAITER: [
-    { label: "Dashboard", to: "/waiter/dashboard" }
-    { label: "Orders", to: "/waiter/orders" }
+    { label: "Dashboard", to: "/waiter/dashboard", icon: LayoutDashboard },
+    { label: "Orders", to: "/waiter/orders", icon: Package }
   ]
 }
